@@ -1,0 +1,25 @@
+{
+  "name": "call-calendar",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Календарь звонков — сервис для бронирования календаря",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,web -c blue,green \"npm run dev -w apps/server\" \"npm run dev -w apps/web\"",
+    "build": "npm run build -w apps/server && npm run build -w apps/web",
+    "start": "npm run start -w apps/server",
+    "test": "npm run test -w apps/server && npm run test -w apps/web",
+    "lint": "npm run lint -w apps/server && npm run lint -w apps/web",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "prettier": "^3.5.3"
+  }
+}

@@ -1,6 +1,5 @@
 # Календарь звонков
 
-
 [![hexlet-check](https://github.com/Leomana8/ai-for-developers-project-386/actions/workflows/hexlet-check.yml/badge.svg)](https://github.com/Leomana8/ai-for-developers-project-386/actions)
 
 Разработайте совместно с ИИ сервис для бронирования календаря
@@ -10,20 +9,53 @@
 
 ## Стек
 
-- Разное
+- **TypeScript** — язык проекта
+- **Vite + React + shadcn/ui (Tailwind CSS 4)** — фронтенд (`apps/web`)
+- **Express 5** — бэкенд (`apps/server`)
+- **Vitest** — тесты, **oxlint** — линтер, **Prettier** — форматирование
+- **release-please** — автоматические релизы по Conventional Commits
+
+Требуется Node.js **22.12+**.
 
 ## Установка
-
-<!-- Опишите установку: клонирование, зависимости, переменные окружения -->
 
 ```bash
 git clone https://github.com/Leomana8/ai-for-developers-project-386.git
 cd ai-for-developers-project-386
+npm install
 ```
 
 ## Использование
 
-<!-- Добавьте примеры запуска и запись asciinema — именно это смотрит работодатель -->
+```bash
+# dev-режим: сервер :3001 + фронтенд :5173 (проксирует /api на сервер)
+npm run dev
+
+# проверка стиля, тесты и сборка
+npm run lint
+npm test
+npm run build
+
+# запуск собранного бэкенда
+npm run build && npm run start
+```
+
+Откройте http://localhost:5173 и нажмите «Проверить /api/health» — фронтенд
+сходит на бэкенд через прокси Vite.
+
+## Структура проекта
+
+```
+apps/
+  web/     # фронтенд: Vite + React + shadcn/ui, http://localhost:5173
+  server/  # бэкенд: Express + TypeScript, http://localhost:3001 (/api/health)
+```
+
+## Коммиты
+
+Проект использует [Conventional Commits](https://www.conventionalcommits.org/):
+`feat:`, `fix:`, `chore:` и т.д. На основе истории таких коммитов
+release-please автоматически собирает changelog и готовит release-PR.
 
 ---
 
