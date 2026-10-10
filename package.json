@@ -15,10 +15,15 @@
     "start": "npm run start -w apps/server",
     "test": "npm run test -w apps/server && npm run test -w apps/web",
     "lint": "npm run lint -w apps/server && npm run lint -w apps/web",
+    "spec": "tsp compile spec",
+    "spec:check": "npm run spec && git diff --exit-code -- spec/output",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
   "devDependencies": {
+    "@typespec/compiler": "^1.17.0",
+    "@typespec/http": "^1.17.0",
+    "@typespec/openapi3": "^1.17.0",
     "concurrently": "^9.1.2",
     "prettier": "^3.5.3"
   }

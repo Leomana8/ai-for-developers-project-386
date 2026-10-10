@@ -43,12 +43,24 @@ npm run build && npm run start
 Откройте http://localhost:5173 и нажмите «Проверить /api/health» — фронтенд
 сходит на бэкенд через прокси Vite.
 
+## API-контракт
+
+Контракт публичного API описан на [TypeSpec](https://typespec.io) в `spec/*.tsp`.
+Генерация OpenAPI-спецификации (`spec/output/openapi.yaml`, OpenAPI 3.0):
+
+```bash
+npm run spec
+```
+
+Сгенерированный файл коммитится; CI проверяет его актуальность (`npm run spec:check`).
+
 ## Структура проекта
 
 ```
 apps/
   web/     # фронтенд: Vite + React + shadcn/ui, http://localhost:5173
   server/  # бэкенд: Express + TypeScript, http://localhost:3001 (/api/health)
+spec/      # API-контракт на TypeSpec → spec/output/openapi.yaml
 ```
 
 ## Коммиты
