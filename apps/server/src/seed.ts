@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 
 import type { components } from './api/schema.js'
+import { formatIso } from './schedule.js'
 import type { Store } from './store.js'
 
 type Meeting = components['schemas']['Meeting']
@@ -12,15 +13,6 @@ export const OWNER = {
   name: 'Владелец календаря',
   email: 'owner@example.com',
 } as const
-
-// Время в спеке — ISO 8601 без часового пояса в серверной зоне (docs/spec.md §6).
-function formatIso(date: Date): string {
-  const pad = (value: number): string => String(value).padStart(2, '0')
-  return (
-    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
-    `T${pad(date.getHours())}:${pad(date.getMinutes())}:00`
-  )
-}
 
 // Дата через offsetDays дней от «сегодня», startMinutes — минуты от начала дня.
 function span(offsetDays: number, startMinutes: number, durationMinutes: number) {

@@ -28,7 +28,7 @@ export function createApp({ seed = false }: CreateAppOptions = {}) {
 
   app.use('/api/event-types', eventTypesRouter(store))
   // Слоты — под-ресурс Типа события: /api/event-types/:id/slots
-  app.use('/api/event-types', slotsRouter)
+  app.use('/api/event-types', slotsRouter(store))
   app.use('/api/meetings', meetingsRouter)
   app.use('/api/health', diagnosticsRouter)
 
