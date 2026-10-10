@@ -42,9 +42,41 @@ function atMinutes(day: Date, minutes: number): Date {
   return date
 }
 
-// Интервалы пересекаются, если начало одного раньше конца другого и наоборот.
-function overlaps(meetings: Meeting[], start: Date, end: Date): boolean {
+// Занят ли интервал какой-нибудь Встречей: интервалы пересекаются, если начало
+// одного раньше конца другого и наоборот. Занятость общая для всех Типов событий.
+export function isOccupied(meetings: Meeting[], start: Date, end: Date): boolean {
   return meetings.some((m) => new Date(m.start) < end && new Date(m.end) > start)
+}
+
+// Является ли момент отметкой единой сетки (шаг 15 минут).
+export function isGridMark(date: Date): boolean {
+  return date.getSeconds() === 0 && date.getMinutes() % GRID_MINUTES === 0
+}
+
+// Пригоден ли момент для старта брони по спеке §5: окно записи
+// [сегодня … сегодня+13] целиком, рабочее окно дня, будущие Слоты.
+// Возвращает код контрактной ошибки 422 или null, если время подходит.
+export function bookingStartError(
+  start: Date,
+  durationMinutes: number,
+  now: Date,
+): 'out_of_window' | null {
+  const today = startOfDay(now)
+  const day = startOfDay(start)
+  if (day < today || day > addDays(today, BOOKING_WINDOW_DAYS - 1)) return 'out_of_window'
+
+  const startMinutes = start.getHours() * 60 + start.getMinutes()
+  if (
+    startMinutes < WORK_DAY_START_MINUTES ||
+    startMinutes + durationMinutes > WORK_DAY_END_MINUTES
+  ) {
+    return 'out_of_window'
+  }
+
+  // Прошедшие часы сегодняшнего дня недоступны: старт должен быть в будущем.
+  if (start.getTime() <= now.getTime()) return 'out_of_window'
+
+  return null
 }
 
 // Доступность по спеке §5: окно записи [сегодня … сегодня+13], единая сетка
@@ -71,7 +103,7 @@ export function availability(
     ) {
       const start = atMinutes(day, startMinutes)
       const end = atMinutes(day, startMinutes + durationMinutes)
-      const available = start.getTime() > now.getTime() && !overlaps(meetings, start, end)
+      const available = start.getTime() > now.getTime() && !isOccupied(meetings, start, end)
       slots.push({ start: formatIso(start), end: formatIso(end), available })
     }
 

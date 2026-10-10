@@ -270,6 +270,183 @@ describe('createApp({ seed: true })', () => {
       }
     }
   })
+
+  it('GET /api/meetings returns seeded upcoming meetings sorted by start', async () => {
+    const response = await fetch(`${seeded.baseUrl}/api/meetings`)
+    expect(response.status).toBe(200)
+    const upcoming = (await response.json()) as components['schemas']['Meeting']
+    expect(upcoming).toHaveLength(4)
+
+    const starts = (upcoming as components['schemas']['Meeting'][]).map((m) => m.start)
+    expect([...starts].sort()).toEqual(starts)
+
+    const now = new Date().getTime()
+    for (const meeting of upcoming as components['schemas']['Meeting'][]) {
+      expect(new Date(meeting.start).getTime()).toBeGreaterThanOrEqual(now)
+      expect(meeting.eventTypeName).toEqual(expect.any(String))
+    }
+  })
+
+  it('responds 409 when a slot of another event type is occupied', async () => {
+    const list = await fetch(`${seeded.baseUrl}/api/event-types`)
+    const eventTypes = (await list.json()) as Array<{ id: string; duration: number }>
+    const consult = eventTypes.find((t) => t.duration === 30)!
+
+    // Сид: Знакомство (15 минут) занимает завтра 09:00–09:15.
+    const response = await fetch(`${seeded.baseUrl}/api/meetings`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        eventTypeId: consult.id,
+        start: `${isoDate(1)}T09:00:00`,
+        guestName: 'Гость',
+        guestEmail: 'guest@example.com',
+      }),
+    })
+    expect(response.status).toBe(409)
+    const payload = await response.json()
+    expect(payload.error.code).toBe('slot_taken')
+  })
+
+  it('creates a meeting in a free slot of the seeded calendar', async () => {
+    const list = await fetch(`${seeded.baseUrl}/api/event-types`)
+    const eventTypes = (await list.json()) as Array<{ id: string; duration: number }>
+    const consult = eventTypes.find((t) => t.duration === 30)!
+
+    const response = await fetch(`${seeded.baseUrl}/api/meetings`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        eventTypeId: consult.id,
+        start: `${isoDate(1)}T09:15:00`,
+        guestName: 'Гость',
+        guestEmail: 'guest@example.com',
+      }),
+    })
+    expect(response.status).toBe(201)
+    const created = (await response.json()) as components['schemas']['Meeting']
+    expect(created).toMatchObject({
+      eventTypeId: consult.id,
+      eventTypeName: 'Консультация',
+      start: `${isoDate(1)}T09:15:00`,
+      end: `${isoDate(1)}T09:45:00`,
+    })
+
+    const upcoming = await fetch(`${seeded.baseUrl}/api/meetings`)
+    expect((await upcoming.json()).length).toBe(5)
+  })
+})
+
+describe('meetings', () => {
+  let meetings: RunningServer
+  let eventTypeId: string
+
+  beforeAll(async () => {
+    meetings = await listenOnRandomPort()
+    const create = await fetch(`${meetings.baseUrl}/api/event-types`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: 'Консультация', duration: 30 }),
+    })
+    const created = await create.json()
+    eventTypeId = (created as components['schemas']['EventType']).id
+  })
+
+  afterAll(async () => {
+    await closeServer(meetings.server)
+  })
+
+  const postMeeting = (overrides: Record<string, unknown> = {}): Promise<Response> =>
+    fetch(`${meetings.baseUrl}/api/meetings`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        eventTypeId,
+        start: `${isoDate(2)}T10:00:00`,
+        guestName: 'Гость',
+        guestEmail: 'guest@example.com',
+        ...overrides,
+      }),
+    })
+
+  it('creates a meeting with normalization and server-side fields', async () => {
+    const response = await postMeeting({
+      start: `${isoDate(1)}T09:00:00`,
+      guestName: '  Иван Петров  ',
+      guestEmail: 'Ivan@Example.COM',
+    })
+    expect(response.status).toBe(201)
+    const created = (await response.json()) as components['schemas']['Meeting']
+    expect(created).toMatchObject({
+      eventTypeId,
+      eventTypeName: 'Консультация',
+      start: `${isoDate(1)}T09:00:00`,
+      end: `${isoDate(1)}T09:30:00`,
+      guestName: 'Иван Петров',
+      guestEmail: 'ivan@example.com',
+    })
+    expect(typeof created.id).toBe('string')
+    expect(typeof created.createdAt).toBe('string')
+  })
+
+  it('responds 409 with slot_taken for an occupied or overlapping slot', async () => {
+    for (const start of [`${isoDate(1)}T09:00:00`, `${isoDate(1)}T09:15:00`]) {
+      const response = await postMeeting({ start })
+      expect(response.status).toBe(409)
+      const payload = await response.json()
+      expect(payload.error.code).toBe('slot_taken')
+    }
+  })
+
+  it('responds 201 for a neighbouring free slot and lists upcoming meetings sorted', async () => {
+    const response = await postMeeting({ start: `${isoDate(1)}T09:30:00` })
+    expect(response.status).toBe(201)
+
+    const list = await fetch(`${meetings.baseUrl}/api/meetings`)
+    const upcoming = (await list.json()) as components['schemas']['Meeting'][]
+    expect(upcoming.map((m) => m.start)).toEqual([
+      `${isoDate(1)}T09:00:00`,
+      `${isoDate(1)}T09:30:00`,
+    ])
+  })
+
+  it('responds 422 with out_of_window for past time, outside working hours or beyond the window', async () => {
+    for (const start of [
+      `${isoDate(-1)}T09:00:00`, // вчерашний день — окно записи уже закрыто
+      `${isoDate(1)}T08:45:00`, // до начала рабочего окна
+      `${isoDate(1)}T17:45:00`, // 30 минут не влезают до 18:00
+      `${isoDate(1)}T18:00:00`, // после конца рабочего окна
+      `${isoDate(14)}T09:00:00`, // за пределами окна записи
+    ]) {
+      const response = await postMeeting({ start })
+      expect(response.status).toBe(422)
+      const payload = await response.json()
+      expect(payload.error.code).toBe('out_of_window')
+    }
+  })
+
+  it('responds 422 with validation_error for a malformed or off-grid start', async () => {
+    for (const start of [
+      'not-a-date',
+      `${isoDate(1)} 09:00:00`, // не ISO 8601
+      `${isoDate(1)}T09:00:00Z`, // в спеке время без часового пояса
+      `${isoDate(1)}T09:07:00`, // вне сетки 15 минут
+    ]) {
+      const response = await postMeeting({ start })
+      expect(response.status).toBe(422)
+      const payload = await response.json()
+      expect(payload.error.code).toBe('validation_error')
+      expect(Object.keys(payload.error.fields)).toContain('start')
+    }
+  })
+
+  it('responds 422 when the name is blank after trim', async () => {
+    const response = await postMeeting({ guestName: '   ' })
+    expect(response.status).toBe(422)
+    const payload = await response.json()
+    expect(payload.error.code).toBe('validation_error')
+    expect(Object.keys(payload.error.fields)).toContain('guestName')
+  })
 })
 
 describe('createApp() storage isolation', () => {

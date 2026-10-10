@@ -29,7 +29,7 @@ export function createApp({ seed = false }: CreateAppOptions = {}) {
   app.use('/api/event-types', eventTypesRouter(store))
   // Слоты — под-ресурс Типа события: /api/event-types/:id/slots
   app.use('/api/event-types', slotsRouter(store))
-  app.use('/api/meetings', meetingsRouter)
+  app.use('/api/meetings', meetingsRouter(store))
   app.use('/api/health', diagnosticsRouter)
 
   // Пути, которых нет в спеке, валидатор пропускает — отвечаем 404
