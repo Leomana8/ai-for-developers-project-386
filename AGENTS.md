@@ -27,7 +27,7 @@ Vite + React + shadcn/ui (фронтенд), Express 5 (бэкенд). Моно�
 - Фронтенд ходит на бэкенд только через `/api` — Vite проксирует `/api` на `:3001` (см. `apps/web/vite.config.ts`). Не использовать абсолютные URL вида `http://localhost:3001` в коде фронтенда.
 - `spec` — API-контракт на TypeSpec. `spec/main.tsp` (маршруты) + `spec/models.tsp` (модели). `npm run spec` генерирует `spec/output/openapi.yaml` (коммитится, CI проверяет актуальность через `npm run spec:check`).
 - Слой данных фронта — типизированный клиент `openapi-fetch` в `apps/web/src/lib/api.ts`; типы генерируются из `spec/output/openapi.yaml` в `apps/web/src/api/schema.d.ts` (`npm run spec:client`, drift-check — `npm run spec:client:check`). База URL пустая → запросы идут относительными `/api/*` (ADR-0004).
-- Сервер потребляет ту же спеку: типы генерируются в `apps/server/src/api/schema.d.ts` (`npm run spec:server`, drift-check — `npm run spec:server:check`), цепочка целиком — `npm run spec:generate`.
+- Сервер потребляет ту же спеку: типы генерируются в `apps/server/src/api/schema.d.ts` (`npm run spec:server`, drift-check — `npm run spec:server:check`), цепочка целиком — `npm run spec:generate`. Запросы и ответы валидируются `express-openapi-validator` по `spec/output/openapi.yaml` (`apps/server/src/openapi.ts`); ошибки валидации — контрактный `ErrorEnvelope` со статусом 422 и кодом `validation_error`, незадокументированные пути — 404 `not_found`. Заготовки маршрутов лежат в `apps/server/src/routes/` по тегам спеки.
 - Общие зависимости ставятся из корня: `npm i <pkg> -w apps/web` или `-w apps/server`.
 
 ## Правила
