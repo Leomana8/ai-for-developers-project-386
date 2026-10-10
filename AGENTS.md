@@ -30,3 +30,17 @@ Vite + React + shadcn/ui (фронтенд), Express 5 (бэкенд). Моно�
 - Файл `.github/workflows/hexlet-check.yml` не менять.
 - Новый код — только TypeScript. Форматирование — Prettier, не настраивать ESLint (используется oxlint).
 - Тесты: Vitest. Дымовой тест сервера в `apps/server/src/app.test.ts` — новый эндпоинт стоит начать с теста в том же стиле.
+
+## Agent skills
+
+### Issue tracker
+
+Задачи ведутся в GitHub Issues этого репозитория (`gh` CLI). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Используются пять канонических лейблов без переименований (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `GLOSSARY.md` + `docs/adr/` в корне репозитория. See `docs/agents/domain.md`.
