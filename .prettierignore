@@ -3,3 +3,9 @@ dist/
 coverage/
 package-lock.json
 CHANGELOG.md
+
+# TypeSpec — форматтер не поддерживается Prettier
+*.tsp
+
+# Генерируемый OpenAPI (создаётся tsp, не форматируется вручную)
+spec/output/

@@ -1,0 +1,339 @@
+openapi: 3.0.0
+info:
+  title: Календарь звонков API
+  version: 0.0.0
+tags:
+  - name: EventTypes
+  - name: Slots
+  - name: Meetings
+  - name: Diagnostics
+paths:
+  /api/event-types:
+    get:
+      operationId: EventTypes_list
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventType'
+      tags:
+        - EventTypes
+    post:
+      operationId: EventTypes_create
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventType'
+        '422':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+      tags:
+        - EventTypes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventTypeCreate'
+  /api/event-types/{id}/slots:
+    get:
+      operationId: Slots_list
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Availability'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+      tags:
+        - Slots
+  /api/health:
+    get:
+      operationId: Diagnostics_check
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+      tags:
+        - Diagnostics
+  /api/meetings:
+    get:
+      operationId: Meetings_list
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Meeting'
+      tags:
+        - Meetings
+    post:
+      operationId: Meetings_create
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Meeting'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '422':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+      tags:
+        - Meetings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MeetingCreate'
+components:
+  schemas:
+    Availability:
+      type: object
+      required:
+        - eventTypeId
+        - window
+        - days
+      properties:
+        eventTypeId:
+          type: string
+        window:
+          $ref: '#/components/schemas/AvailabilityWindow'
+        days:
+          type: array
+          items:
+            $ref: '#/components/schemas/Day'
+    AvailabilityWindow:
+      type: object
+      required:
+        - from
+        - to
+      properties:
+        from:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+    Day:
+      type: object
+      required:
+        - date
+        - slots
+      properties:
+        date:
+          type: string
+          format: date
+        slots:
+          type: array
+          items:
+            $ref: '#/components/schemas/Slot'
+    Error:
+      type: object
+      required:
+        - code
+        - message
+        - fields
+      properties:
+        code:
+          $ref: '#/components/schemas/ErrorCode'
+        message:
+          type: string
+        fields:
+          type: object
+          additionalProperties:
+            type: string
+    ErrorCode:
+      type: string
+      enum:
+        - validation_error
+        - slot_taken
+        - out_of_window
+        - not_found
+    ErrorEnvelope:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          $ref: '#/components/schemas/Error'
+    EventType:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - duration
+      properties:
+        id:
+          type: string
+          description: UUID, генерирует сервер; Владелец не вводит
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Название Типа события
+        description:
+          type: string
+          nullable: true
+          maxLength: 500
+          description: Описание Типа события; может отсутствовать
+        duration:
+          type: integer
+          format: int32
+          minimum: 15
+          maximum: 90
+          description: Длительность в минутах, кратно 15, от 15 до 90
+    EventTypeCreate:
+      type: object
+      required:
+        - name
+        - duration
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          nullable: true
+          maxLength: 500
+        duration:
+          type: integer
+          format: int32
+          minimum: 15
+          maximum: 90
+          description: Длительность в минутах, кратно 15, от 15 до 90
+    Health:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+    Meeting:
+      type: object
+      required:
+        - id
+        - eventTypeId
+        - eventTypeName
+        - start
+        - end
+        - guestName
+        - guestEmail
+        - createdAt
+      properties:
+        id:
+          type: string
+        eventTypeId:
+          type: string
+        eventTypeName:
+          type: string
+        start:
+          type: string
+          description: Начало Встречи, ISO 8601 без часового пояса
+        end:
+          type: string
+          description: Конец Встречи, ISO 8601 без часового пояса
+        guestName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        guestEmail:
+          type: string
+          maxLength: 254
+          format: email
+        createdAt:
+          type: string
+          description: Время создания Записи, ISO 8601 без часового пояса
+    MeetingCreate:
+      type: object
+      required:
+        - eventTypeId
+        - start
+        - guestName
+        - guestEmail
+      properties:
+        eventTypeId:
+          type: string
+        start:
+          type: string
+          description: Начало Слота, ISO 8601 без часового пояса
+        guestName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        guestEmail:
+          type: string
+          maxLength: 254
+          format: email
+    Slot:
+      type: object
+      required:
+        - start
+        - end
+        - available
+      properties:
+        start:
+          type: string
+          description: Начало Слота, ISO 8601 без часового пояса, напр. 2026-10-10T09:00:00
+        end:
+          type: string
+          description: Конец Слота, ISO 8601 без часового пояса, напр. 2026-10-10T09:15:00
+        available:
+          type: boolean
+servers:
+  - url: http://localhost:3001
+    description: Локальный сервер разработки
+    variables: {}

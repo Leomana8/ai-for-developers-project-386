@@ -11,6 +11,7 @@ Vite + React + shadcn/ui (фронтенд), Express 5 (бэкенд). Моно�
 | `npm test`       | Vitest во всех приложениях                    |
 | `npm run lint`   | oxlint во всех приложениях                    |
 | `npm run format` | Prettier по всему проекту                     |
+| `npm run spec`   | генерация OpenAPI из TypeSpec (`spec/*.tsp`)  |
 | `npm run build`  | сборка server (tsc) и web (vite)              |
 | `npm run start`  | запуск собранного бэкенда                     |
 
@@ -21,6 +22,7 @@ Vite + React + shadcn/ui (фронтенд), Express 5 (бэкенд). Моно�
 - `apps/web` — React + Vite + shadcn/ui. Точка входа `src/main.tsx`, стили `src/index.css` (Tailwind 4). Компоненты shadcn лежат в `src/components/ui/`, добавлять через `npx shadcn@latest add <component> -c apps/web`.
 - `apps/server` — Express 5. `src/app.ts` создаёт приложение (экспортируется для тестов), `src/index.ts` его слушает. порты и хост через env (`PORT`, по умолчанию 3001).
 - Фронтенд ходит на бэкенд только через `/api` — Vite проксирует `/api` на `:3001` (см. `apps/web/vite.config.ts`). Не использовать абсолютные URL вида `http://localhost:3001` в коде фронтенда.
+- `spec` — API-контракт на TypeSpec. `spec/main.tsp` (маршруты) + `spec/models.tsp` (модели). `npm run spec` генерирует `spec/output/openapi.yaml` (коммитится, CI проверяет актуальность через `npm run spec:check`).
 - Общие зависимости ставятся из корня: `npm i <pkg> -w apps/web` или `-w apps/server`.
 
 ## Правила
