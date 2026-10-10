@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
+import { api } from '@/lib/api'
 
 type HealthStatus = 'unknown' | 'ok' | 'error'
 
@@ -9,9 +10,8 @@ export function HealthPage() {
 
   async function checkHealth() {
     try {
-      const response = await fetch('/api/health')
-      const body = (await response.json()) as { status: string }
-      setStatus(response.ok && body.status === 'ok' ? 'ok' : 'error')
+      const { data } = await api.GET('/api/health')
+      setStatus(data?.status === 'ok' ? 'ok' : 'error')
     } catch {
       setStatus('error')
     }

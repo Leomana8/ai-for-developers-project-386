@@ -9,3 +9,6 @@ CHANGELOG.md
 
 # Генерируемый OpenAPI (создаётся tsp, не форматируется вручную)
 spec/output/
+
+# Генерируемые типы клиента (создаются openapi-typescript, не форматируются вручную)
+apps/web/src/api/

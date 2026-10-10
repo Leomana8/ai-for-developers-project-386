@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: ["**"]
+    branches: ['**']
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -32,3 +32,6 @@ jobs:
 
       - name: Check OpenAPI spec up to date
         run: npm run spec:check
+
+      - name: Check client SDK types up to date
+        run: npm run spec:client:check
