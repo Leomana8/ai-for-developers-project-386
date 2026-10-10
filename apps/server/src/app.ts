@@ -6,8 +6,19 @@ import { diagnosticsRouter } from './routes/diagnostics.js'
 import { eventTypesRouter } from './routes/event-types.js'
 import { meetingsRouter } from './routes/meetings.js'
 import { slotsRouter } from './routes/slots.js'
+import { seedStore } from './seed.js'
+import { createStore } from './store.js'
 
-export function createApp() {
+export type CreateAppOptions = {
+  /** Накатить демо-сид: Типы событий и будущие Встречи (apps/server/src/seed.ts). */
+  seed?: boolean
+}
+
+export function createApp({ seed = false }: CreateAppOptions = {}) {
+  // Свежее хранилище на каждый createApp() — изоляция данных в тестах (решение #8).
+  const store = createStore()
+  if (seed) seedStore(store)
+
   const app = express()
 
   // Порядок важен: тело парсится до валидатора, валидатор — до маршрутов;
@@ -15,7 +26,7 @@ export function createApp() {
   app.use(express.json())
   app.use(openApiValidator())
 
-  app.use('/api/event-types', eventTypesRouter)
+  app.use('/api/event-types', eventTypesRouter(store))
   // Слоты — под-ресурс Типа события: /api/event-types/:id/slots
   app.use('/api/event-types', slotsRouter)
   app.use('/api/meetings', meetingsRouter)
