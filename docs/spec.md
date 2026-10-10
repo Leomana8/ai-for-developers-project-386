@@ -66,12 +66,12 @@
 
 ### Тип события
 
-| Поле | Правила |
-| --- | --- |
-| `id` | uuid, генерирует сервер; Владелец не вводит |
-| `name` | обязательно, непустое, ≤100 символов |
-| `description` | необязательно, ≤500 символов |
-| `duration` | обязательно, целое число минут, кратно 15, от 15 до 90 |
+| Поле          | Правила                                                |
+| ------------- | ------------------------------------------------------ |
+| `id`          | uuid, генерирует сервер; Владелец не вводит            |
+| `name`        | обязательно, непустое, ≤100 символов                   |
+| `description` | необязательно, ≤500 символов                           |
+| `duration`    | обязательно, целое число минут, кратно 15, от 15 до 90 |
 
 - Тип события **неизменяем**: правка и удаление вне объёма. Встреча ссылается на
   `eventTypeId`; снапшот названия/длительности не хранится.
@@ -111,13 +111,13 @@
 Публичный API под `/api` (проксируется Vite). Время — ISO 8601 в серверной зоне
 (`2026-10-10T09:00:00`); часовые пояса отложены.
 
-| Метод | Путь | Ответ |
-| --- | --- | --- |
-| `GET` | `/api/event-types` | `200` `[EventType]` |
-| `POST` | `/api/event-types` | `201` `EventType`; `422` |
-| `GET` | `/api/event-types/:id/slots` | `200` `Availability`; `404` |
-| `POST` | `/api/meetings` | `201` `Meeting`; `404` / `409` / `422` |
-| `GET` | `/api/meetings` | `200` `[Meeting]` |
+| Метод  | Путь                         | Ответ                                  |
+| ------ | ---------------------------- | -------------------------------------- |
+| `GET`  | `/api/event-types`           | `200` `[EventType]`                    |
+| `POST` | `/api/event-types`           | `201` `EventType`; `422`               |
+| `GET`  | `/api/event-types/:id/slots` | `200` `Availability`; `404`            |
+| `POST` | `/api/meetings`              | `201` `Meeting`; `404` / `409` / `422` |
+| `GET`  | `/api/meetings`              | `200` `[Meeting]`                      |
 
 **EventType**
 
@@ -136,9 +136,7 @@
   "days": [
     {
       "date": "2026-10-10",
-      "slots": [
-        { "start": "2026-10-10T09:00:00", "end": "2026-10-10T09:15:00", "available": true }
-      ]
+      "slots": [{ "start": "2026-10-10T09:00:00", "end": "2026-10-10T09:15:00", "available": true }]
     }
   ]
 }
@@ -173,12 +171,12 @@
 { "error": { "code": "slot_taken", "message": "Слот больше недоступен", "fields": {} } }
 ```
 
-| Код | HTTP | Когда |
-| --- | --- | --- |
+| Код                | HTTP  | Когда                               |
+| ------------------ | ----- | ----------------------------------- |
 | `validation_error` | `422` | невалидные данные (поля в `fields`) |
-| `slot_taken` | `409` | Слот занят/пересекается с Встречей |
-| `out_of_window` | `422` | Слот вне окна записи |
-| `not_found` | `404` | Тип события не найден |
+| `slot_taken`       | `409` | Слот занят/пересекается с Встречей  |
+| `out_of_window`    | `422` | Слот вне окна записи                |
+| `not_found`        | `404` | Тип события не найден               |
 
 ## 7. Экраны и маршруты
 
@@ -186,21 +184,21 @@ React Router (`createBrowserRouter`, ADR-0001).
 
 **Гость**
 
-| Путь | Экран |
-| --- | --- |
-| `/` | главная/лендинг |
-| `/book` | список Типов событий |
-| `/book/:eventTypeId?date=…` | календарь (окно 14 дней) и выбор Слота |
-| `/book/:eventTypeId/confirm?start=…` | подтверждение (имя, email) |
-| `/book/success` | успех |
+| Путь                                 | Экран                                  |
+| ------------------------------------ | -------------------------------------- |
+| `/`                                  | главная/лендинг                        |
+| `/book`                              | список Типов событий                   |
+| `/book/:eventTypeId?date=…`          | календарь (окно 14 дней) и выбор Слота |
+| `/book/:eventTypeId/confirm?start=…` | подтверждение (имя, email)             |
+| `/book/success`                      | успех                                  |
 
 **Админка**
 
-| Путь | Экран |
-| --- | --- |
-| `/admin` | редирект на `/admin/meetings` |
-| `/admin/meetings` | предстоящие Встречи |
-| `/admin/event-types/new` | создание Типа события |
+| Путь                     | Экран                         |
+| ------------------------ | ----------------------------- |
+| `/admin`                 | редирект на `/admin/meetings` |
+| `/admin/meetings`        | предстоящие Встречи           |
+| `/admin/event-types/new` | создание Типа события         |
 
 Служебные: `/health` — диагностика; `*` → редирект на `/`.
 
@@ -254,14 +252,15 @@ idle | submitting | error`; `409` → сообщение и возврат в к
 Разбивка спецификации на тикеты — под-issues #3; каждый тикет ссылается на раздел
 выше. Формат тикета: заголовок в Conventional Commits (`feat(web): …`,
 `feat(server): …`), тело — `## Что сделать / ## Контекст / ## Объём / ## Вне объёма /
+
 ## Критерии готовности`.
 
-| Тикет | Разделы спеки |
-| --- | --- |
-| [#23](https://github.com/Leomana8/ai-for-developers-project-386/issues/23) `feat(server): хранилище и Типы событий` | §5, §6 |
-| [#24](https://github.com/Leomana8/ai-for-developers-project-386/issues/24) `feat(server): доступность Слотов в окне 14 дней` | §5, §6 |
-| [#25](https://github.com/Leomana8/ai-for-developers-project-386/issues/25) `feat(server): Записи и предстоящие Встречи` | §5, §6 |
-| [#26](https://github.com/Leomana8/ai-for-developers-project-386/issues/26) `feat(web): слой данных и компоненты` | §6, §7 |
-| [#27](https://github.com/Leomana8/ai-for-developers-project-386/issues/27) `feat(web): главная и список Типов событий` | §7 |
-| [#28](https://github.com/Leomana8/ai-for-developers-project-386/issues/28) `feat(web): гостевой поток записи` | §7, §8 |
-| [#29](https://github.com/Leomana8/ai-for-developers-project-386/issues/29) `feat(web): Админка` | §7 |
+| Тикет                                                                                                                        | Разделы спеки |
+| ---------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| [#23](https://github.com/Leomana8/ai-for-developers-project-386/issues/23) `feat(server): хранилище и Типы событий`          | §5, §6        |
+| [#24](https://github.com/Leomana8/ai-for-developers-project-386/issues/24) `feat(server): доступность Слотов в окне 14 дней` | §5, §6        |
+| [#25](https://github.com/Leomana8/ai-for-developers-project-386/issues/25) `feat(server): Записи и предстоящие Встречи`      | §5, §6        |
+| [#26](https://github.com/Leomana8/ai-for-developers-project-386/issues/26) `feat(web): слой данных и компоненты`             | §6, §7        |
+| [#27](https://github.com/Leomana8/ai-for-developers-project-386/issues/27) `feat(web): главная и список Типов событий`       | §7            |
+| [#28](https://github.com/Leomana8/ai-for-developers-project-386/issues/28) `feat(web): гостевой поток записи`                | §7, §8        |
+| [#29](https://github.com/Leomana8/ai-for-developers-project-386/issues/29) `feat(web): Админка`                              | §7            |

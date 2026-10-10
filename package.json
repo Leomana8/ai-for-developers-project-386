@@ -16,7 +16,12 @@
     "test": "npm run test -w apps/server && npm run test -w apps/web",
     "lint": "npm run lint -w apps/server && npm run lint -w apps/web",
     "spec": "tsp compile spec",
+    "spec:generate": "npm run spec && npm run spec:client && npm run spec:server",
     "spec:check": "npm run spec && git diff --exit-code -- spec/output",
+    "spec:client": "openapi-typescript spec/output/openapi.yaml -o apps/web/src/api/schema.d.ts",
+    "spec:client:check": "npm run spec:client && git diff --exit-code -- apps/web/src/api/schema.d.ts",
+    "spec:server": "openapi-typescript spec/output/openapi.yaml -o apps/server/src/api/schema.d.ts",
+    "spec:server:check": "npm run spec:server && git diff --exit-code -- apps/server/src/api/schema.d.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
@@ -25,6 +30,7 @@
     "@typespec/http": "^1.17.0",
     "@typespec/openapi3": "^1.17.0",
     "concurrently": "^9.1.2",
+    "openapi-typescript": "^7.13.0",
     "prettier": "^3.5.3"
   }
 }
