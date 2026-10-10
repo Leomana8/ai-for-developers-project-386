@@ -12,3 +12,6 @@ spec/output/
 
 # Генерируемые типы клиента (создаются openapi-typescript, не форматируются вручную)
 apps/web/src/api/
+
+# Генерируемые типы сервера (создаются openapi-typescript, не форматируются вручную)
+apps/server/src/api/

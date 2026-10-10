@@ -35,3 +35,6 @@ jobs:
 
       - name: Check client SDK types up to date
         run: npm run spec:client:check
+
+      - name: Check server types up to date
+        run: npm run spec:server:check
