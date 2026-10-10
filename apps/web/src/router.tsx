@@ -1,6 +1,8 @@
 import type { RouteObject } from 'react-router-dom'
 import { Navigate } from 'react-router-dom'
 
+import { EventTypeFormPage } from '@/pages/admin/EventTypeFormPage'
+import { MeetingsPage } from '@/pages/admin/MeetingsPage'
 import { ConfirmPage } from '@/pages/booking/ConfirmPage'
 import { EventTypesPage } from '@/pages/booking/EventTypesPage'
 import { SlotPickerPage } from '@/pages/booking/SlotPickerPage'
@@ -15,6 +17,9 @@ export const routes: RouteObject[] = [
   { path: '/book/success', element: <SuccessPage /> },
   { path: '/book/:eventTypeId', element: <SlotPickerPage /> },
   { path: '/book/:eventTypeId/confirm', element: <ConfirmPage /> },
+  { path: '/admin', element: <Navigate to="/admin/meetings" replace /> },
+  { path: '/admin/meetings', element: <MeetingsPage /> },
+  { path: '/admin/event-types/new', element: <EventTypeFormPage /> },
   { path: '/health', element: <HealthPage /> },
   { path: '*', element: <Navigate to="/" replace /> },
 ]

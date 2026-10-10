@@ -68,4 +68,16 @@ describe('маршрутизация', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Вы записаны!')
     expect(screen.getByRole('link', { name: 'Записаться ещё' })).toHaveAttribute('href', '/book')
   })
+
+  it('/admin редиректит на список предстоящих Встреч', async () => {
+    renderAt('/admin')
+
+    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent(
+      'Предстоящие Встречи',
+    )
+    expect(screen.getByRole('link', { name: 'Создать Тип события' })).toHaveAttribute(
+      'href',
+      '/admin/event-types/new',
+    )
+  })
 })
