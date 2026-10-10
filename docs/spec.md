@@ -251,9 +251,17 @@ idle | submitting | error`; `409` → сообщение и возврат в к
 
 ## Тикеты
 
-Разбивка спецификации на тикеты — под-issues карты #4; каждый тикет ссылается на
-раздел выше. Формат тикета: заголовок в Conventional Commits (`feat(web): …`,
+Разбивка спецификации на тикеты — под-issues #3; каждый тикет ссылается на раздел
+выше. Формат тикета: заголовок в Conventional Commits (`feat(web): …`,
 `feat(server): …`), тело — `## Что сделать / ## Контекст / ## Объём / ## Вне объёма /
 ## Критерии готовности`.
 
-<!-- список тикетов добавляется по мере создания -->
+| Тикет | Разделы спеки |
+| --- | --- |
+| [#23](https://github.com/Leomana8/ai-for-developers-project-386/issues/23) `feat(server): хранилище и Типы событий` | §5, §6 |
+| [#24](https://github.com/Leomana8/ai-for-developers-project-386/issues/24) `feat(server): доступность Слотов в окне 14 дней` | §5, §6 |
+| [#25](https://github.com/Leomana8/ai-for-developers-project-386/issues/25) `feat(server): Записи и предстоящие Встречи` | §5, §6 |
+| [#26](https://github.com/Leomana8/ai-for-developers-project-386/issues/26) `feat(web): слой данных и компоненты` | §6, §7 |
+| [#27](https://github.com/Leomana8/ai-for-developers-project-386/issues/27) `feat(web): главная и список Типов событий` | §7 |
+| [#28](https://github.com/Leomana8/ai-for-developers-project-386/issues/28) `feat(web): гостевой поток записи` | §7, §8 |
+| [#29](https://github.com/Leomana8/ai-for-developers-project-386/issues/29) `feat(web): Админка` | §7 |
