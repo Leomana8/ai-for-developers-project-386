@@ -158,6 +158,45 @@ describe('гостевой поток записи', () => {
     expect(screen.getByTestId('location').textContent).toBe(`/book/e1`)
   })
 
+  it('422 out_of_window → «Слот больше недоступен» и возврат к календарю', async () => {
+    // Слот был предложен календарём, но к моменту отправки его время прошло.
+    getEventTypesMock.mockResolvedValue([eventType])
+    const today = isoDay(0)
+    getSlotsMock.mockResolvedValue({
+      eventTypeId: 'e1',
+      window: { from: today, to: isoDay(13) },
+      days: [
+        {
+          date: today,
+          slots: [{ start: `${today}T09:00:00`, end: `${today}T09:30:00`, available: true }],
+        },
+      ],
+    })
+    createMeetingMock.mockRejectedValue(
+      new ApiError({
+        error: {
+          code: 'out_of_window',
+          message: 'Slot is outside the booking window',
+          fields: { start: 'outside the booking window or working hours' },
+        },
+      }),
+    )
+
+    renderBooking(`/book/e1/confirm?start=${encodeURIComponent(`${today}T09:00:00`)}`)
+
+    fireEvent.input(await screen.findByLabelText('Имя'), { target: { value: 'Иван Петров' } })
+    fireEvent.input(screen.getByLabelText('Email'), { target: { value: 'ivan@example.com' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Записаться' }))
+
+    expect(await screen.findByText('Слот больше недоступен')).toBeInTheDocument()
+    expect(
+      await screen.findByText('Время этого Слота уже прошло — выберите другой Слот.'),
+    ).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Выбрать другой слот' }))
+    expect(await screen.findByRole('heading', { name: 'Выберите Слот' })).toBeInTheDocument()
+    expect(screen.getByTestId('location').textContent).toBe(`/book/e1`)
+  })
+
   it('422 → ошибки полей из конверта', async () => {
     getEventTypesMock.mockResolvedValue([eventType])
     const today = isoDay(0)

@@ -24,7 +24,7 @@ export function ConfirmPage() {
   const [guestName, setGuestName] = useState('')
   const [guestEmail, setGuestEmail] = useState('')
   const [submission, setSubmission] = useState<Submission>('idle')
-  const [slotTaken, setSlotTaken] = useState(false)
+  const [slotTaken, setSlotTaken] = useState<false | 'taken' | 'expired'>(false)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
@@ -70,7 +70,10 @@ export function ConfirmPage() {
     } catch (error: unknown) {
       setSubmission('error')
       if (error instanceof ApiError && error.code === 'slot_taken') {
-        setSlotTaken(true)
+        setSlotTaken('taken')
+      } else if (error instanceof ApiError && error.code === 'out_of_window') {
+        // Слот был предложен календарём, но к моменту отправки его время прошло.
+        setSlotTaken('expired')
       } else if (error instanceof ApiError && error.code === 'validation_error') {
         setFieldErrors(error.fields)
       } else {
@@ -106,10 +109,14 @@ export function ConfirmPage() {
             <Link to="/book">К списку типов</Link>
           </Button>
         </div>
-      ) : slotTaken ? (
+      ) : slotTaken !== false ? (
         <Alert role="alert">
           <AlertTitle>Слот больше недоступен</AlertTitle>
-          <AlertDescription>Кто-то занял это время раньше — выберите другой Слот.</AlertDescription>
+          <AlertDescription>
+            {slotTaken === 'taken'
+              ? 'Кто-то занял это время раньше — выберите другой Слот.'
+              : 'Время этого Слота уже прошло — выберите другой Слот.'}
+          </AlertDescription>
           <Button
             className="w-fit"
             onClick={() => navigate(`/book/${eventTypeId}`, { replace: true })}
