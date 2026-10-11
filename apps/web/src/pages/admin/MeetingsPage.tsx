@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { apiErrorMessage, getMeetings } from '@/lib/api'
+import { ADMIN_UNAVAILABLE_MESSAGE, ApiError, apiErrorMessage, getMeetings } from '@/lib/api'
 import { formatDayTime } from '@/lib/datetime'
 import type { components } from '@/api/schema'
 
@@ -28,7 +28,12 @@ export function MeetingsPage() {
         if (!cancelled) setMeetings(result)
       },
       (error: unknown) => {
-        if (!cancelled) setErrorMessage(apiErrorMessage(error))
+        if (!cancelled) {
+          // Сетевой сбой — текст Админки; ошибки API (конверт) — общие сообщения.
+          setErrorMessage(
+            error instanceof ApiError ? apiErrorMessage(error) : ADMIN_UNAVAILABLE_MESSAGE,
+          )
+        }
       },
     )
     return () => {

@@ -77,7 +77,10 @@ const ERROR_MESSAGES: Record<ErrorCode, string> = {
   not_found: 'Тип события не найден',
 }
 
+// Гостевой поток: текст обязателен спекой (§8). Для Админки — свой текст:
+// приглашение «записаться» Владельцу календаря не показываем.
 export const API_UNAVAILABLE_MESSAGE = 'Записаться сейчас нельзя, попробуйте позже'
+export const ADMIN_UNAVAILABLE_MESSAGE = 'Сервер недоступен, попробуйте позже'
 
 export function apiErrorMessage(error: unknown): string {
   if (error instanceof ApiError) {

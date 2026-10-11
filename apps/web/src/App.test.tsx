@@ -27,6 +27,7 @@ vi.mock('@/lib/api', () => ({
     }
   },
   API_UNAVAILABLE_MESSAGE: 'Записаться сейчас нельзя, попробуйте позже',
+  ADMIN_UNAVAILABLE_MESSAGE: 'Сервер недоступен, попробуйте позже',
 }))
 
 function Routes() {

@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { ApiError, apiErrorMessage, createEventType } from '@/lib/api'
+import { ADMIN_UNAVAILABLE_MESSAGE, ApiError, apiErrorMessage, createEventType } from '@/lib/api'
 
 // /admin/event-types/new — создание Типа события «от имени Владельца».
 // Клиент валидирует подсказкой; сервер — 422 со списком полей (docs/spec.md §5).
@@ -57,7 +57,10 @@ export function EventTypeFormPage() {
       if (error instanceof ApiError && error.code === 'validation_error') {
         setFieldErrors(error.fields)
       } else {
-        setErrorMessage(apiErrorMessage(error))
+        // Сетевой сбой — текст Админки; ошибки API (конверт) — общие сообщения.
+        setErrorMessage(
+          error instanceof ApiError ? apiErrorMessage(error) : ADMIN_UNAVAILABLE_MESSAGE,
+        )
       }
     } finally {
       setSubmitting(false)

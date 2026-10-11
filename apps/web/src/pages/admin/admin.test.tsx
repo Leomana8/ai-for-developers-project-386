@@ -22,6 +22,7 @@ vi.mock('@/lib/api', () => ({
     }
   },
   API_UNAVAILABLE_MESSAGE: 'Записаться сейчас нельзя, попробуйте позже',
+  ADMIN_UNAVAILABLE_MESSAGE: 'Сервер недоступен, попробуйте позже',
 }))
 
 import { ApiError, createEventType, getMeetings } from '@/lib/api'
@@ -71,13 +72,12 @@ describe('MeetingsPage', () => {
     expect(await screen.findByText('Пока нет записей')).toBeInTheDocument()
   })
 
-  it('ошибка API → понятное сообщение', async () => {
+  it('сетевой сбой → текст Админки, а не гостевой', async () => {
     getMeetingsMock.mockRejectedValue(new TypeError('fetch failed'))
     renderMeetings()
 
-    expect(
-      await screen.findByText('Записаться сейчас нельзя, попробуйте позже'),
-    ).toBeInTheDocument()
+    expect(await screen.findByText('Сервер недоступен, попробуйте позже')).toBeInTheDocument()
+    expect(screen.queryByText('Записаться сейчас нельзя, попробуйте позже')).not.toBeInTheDocument()
   })
 
   it('ведёт к форме создания Типа события', async () => {
@@ -158,6 +158,19 @@ describe('EventTypeFormPage', () => {
 
     expect(await screen.findByText('Укажите название')).toBeInTheDocument()
     expect(createEventType).not.toHaveBeenCalled()
+  })
+
+  it('сетевой сбой → текст Админки, а не гостевой', async () => {
+    vi.mocked(createEventType).mockRejectedValue(new TypeError('fetch failed'))
+    renderForm()
+
+    fireEvent.input(screen.getByLabelText('Название'), { target: { value: 'Менторинг' } })
+    fireEvent.input(screen.getByLabelText(/Длительность/), { target: { value: '60' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Создать Тип события' }))
+
+    expect(await screen.findByText('Сервер недоступен, попробуйте позже')).toBeInTheDocument()
+    expect(screen.queryByText('Записаться сейчас нельзя, попробуйте позже')).not.toBeInTheDocument()
+    expect((await screen.findByTestId('location')).textContent).toBe('/admin/event-types/new')
   })
 
   it('422 от сервера → ошибки полей из конверта', async () => {
