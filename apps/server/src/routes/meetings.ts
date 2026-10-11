@@ -51,9 +51,7 @@ export function meetingsRouter(store: Store): Router {
     if (guestName === '') {
       res
         .status(422)
-        .json(
-          errorEnvelope('validation_error', 'Invalid request', { guestName: 'must not be blank' }),
-        )
+        .json(errorEnvelope('validation_error', 'Invalid request', { guestName: 'Укажите имя' }))
       return
     }
 
@@ -61,7 +59,7 @@ export function meetingsRouter(store: Store): Router {
     if (start === null || !isGridMark(start)) {
       res.status(422).json(
         errorEnvelope('validation_error', 'Invalid request', {
-          start: 'must be an ISO 8601 timestamp without time zone on a 15-minute grid mark',
+          start: 'Выберите время из предложенных Слотов',
         }),
       )
       return
@@ -71,7 +69,7 @@ export function meetingsRouter(store: Store): Router {
     if (timeError !== null) {
       res.status(422).json(
         errorEnvelope(timeError, 'Slot is outside the booking window', {
-          start: 'outside the booking window or working hours',
+          start: 'Слот вне окна записи или рабочего времени (09:00–18:00)',
         }),
       )
       return

@@ -29,7 +29,7 @@ export function eventTypesRouter(store: Store): Router {
     if (req.body.duration % 15 !== 0) {
       res.status(422).json(
         errorEnvelope('validation_error', 'Invalid request', {
-          duration: 'must be a multiple of 15',
+          duration: 'Длительность — кратна 15, от 15 до 90 минут',
         }),
       )
       return

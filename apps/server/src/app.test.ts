@@ -446,6 +446,8 @@ describe('meetings', () => {
     const payload = await response.json()
     expect(payload.error.code).toBe('validation_error')
     expect(Object.keys(payload.error.fields)).toContain('guestName')
+    // Канон текстов ошибок полей (docs/spec.md §5 «Запись»).
+    expect(payload.error.fields.guestName).toBe('Укажите имя')
   })
 
   // Регрессия: ошибки валидатора схемы (minLength, format email) должны приходить
