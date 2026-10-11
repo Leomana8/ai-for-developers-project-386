@@ -1,21 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { HomePage } from '@/pages/HomePage'
-
-vi.mock('@/lib/api', () => ({
-  getEventTypes: vi.fn(),
-  apiErrorMessage: vi.fn(() => 'Записаться сейчас нельзя, попробуйте позже'),
-}))
-
-import { getEventTypes } from '@/lib/api'
-
-const getEventTypesMock = vi.mocked(getEventTypes)
-
-beforeEach(() => {
-  getEventTypesMock.mockReset()
-})
 
 function renderHomePage() {
   return render(
@@ -27,39 +14,21 @@ function renderHomePage() {
 
 describe('HomePage', () => {
   it('CTA «Записаться» ведёт на /book', () => {
-    getEventTypesMock.mockReturnValue(new Promise(() => {}))
     renderHomePage()
 
     expect(screen.getByRole('link', { name: 'Записаться' })).toHaveAttribute('href', '/book')
   })
 
-  it('показывает Типы событий из API со ссылкой на запись', async () => {
-    getEventTypesMock.mockResolvedValue([
-      { id: 'e1', name: 'Знакомство', description: 'Короткий созвон', duration: 15 },
-      { id: 'e2', name: 'Консультация', description: null, duration: 30 },
-    ])
+  it('вкладка «Админка» ведёт на /admin', () => {
     renderHomePage()
 
-    expect(await screen.findByText('Знакомство')).toBeInTheDocument()
-    expect(screen.getByText('Консультация')).toBeInTheDocument()
-    expect(screen.getByText('15 мин')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /Знакомство/ })).toHaveAttribute('href', '/book/e1')
-    expect(screen.getByRole('link', { name: /Консультация/ })).toHaveAttribute('href', '/book/e2')
+    expect(screen.getByRole('tab', { name: 'Админка' })).toHaveAttribute('href', '/admin')
   })
 
-  it('пустой список → «Пока нет доступных типов»', async () => {
-    getEventTypesMock.mockResolvedValue([])
+  it('активная вкладка — «Запись»', () => {
     renderHomePage()
 
-    expect(await screen.findByText('Пока нет доступных типов')).toBeInTheDocument()
-  })
-
-  it('ошибка API → понятное сообщение', async () => {
-    getEventTypesMock.mockRejectedValue(new TypeError('fetch failed'))
-    renderHomePage()
-
-    expect(
-      await screen.findByText('Записаться сейчас нельзя, попробуйте позже'),
-    ).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Запись' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: 'Админка' })).toHaveAttribute('aria-selected', 'false')
   })
 })
