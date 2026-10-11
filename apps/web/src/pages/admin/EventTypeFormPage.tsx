@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { SiteHeader } from '@/components/SiteHeader'
 import { ADMIN_UNAVAILABLE_MESSAGE, ApiError, apiErrorMessage, createEventType } from '@/lib/api'
 
 // /admin/event-types/new — создание Типа события «от имени Владельца».
@@ -69,8 +70,9 @@ export function EventTypeFormPage() {
 
   return (
     <main className="mx-auto flex min-h-svh w-full max-w-xl flex-col gap-6 px-6 py-16">
+      <SiteHeader section="admin" />
       <header className="flex flex-col gap-2">
-        <h1 className="font-heading text-3xl font-semibold">Новый Тип события</h1>
+        <h1 className="font-heading text-3xl font-semibold">Новый тип события</h1>
         <p className="text-muted-foreground">
           Шаблон звонка, на который смогут записываться Гости.
         </p>
@@ -132,15 +134,13 @@ export function EventTypeFormPage() {
         )}
 
         <Button type="submit" disabled={submitting}>
-          {submitting ? 'Создаём…' : 'Создать Тип события'}
+          {submitting ? 'Создаём…' : 'Создать тип события'}
         </Button>
       </form>
 
-      <div>
-        <Link to="/admin/meetings" className="text-sm underline-offset-4 hover:underline">
-          К предстоящим Встречам
-        </Link>
-      </div>
+      <Button asChild variant="outline" className="w-fit">
+        <Link to="/admin/meetings">К предстоящим Встречам</Link>
+      </Button>
     </main>
   )
 }

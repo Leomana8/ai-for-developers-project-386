@@ -24,11 +24,12 @@ vi.mock('@/lib/api', () => ({
   API_UNAVAILABLE_MESSAGE: 'Записаться сейчас нельзя, попробуйте позже',
 }))
 
-import { apiErrorMessage, getSlots } from '@/lib/api'
+import { apiErrorMessage, getEventTypes, getSlots } from '@/lib/api'
 import { formatDayLabel } from '@/lib/datetime'
 import { SlotPickerPage } from '@/pages/booking/SlotPickerPage'
 
 const getSlotsMock = vi.mocked(getSlots)
+const getEventTypesMock = vi.mocked(getEventTypes)
 const apiErrorMessageMock = vi.mocked(apiErrorMessage)
 
 // Локальные даты окна (offset от сегодня), чтобы не зависеть от часового пояса.
@@ -42,6 +43,10 @@ function dayIso(offsetDays: number): string {
 beforeEach(() => {
   getSlotsMock.mockReset()
   apiErrorMessageMock.mockClear()
+  // Сводка типа события на календаре: по умолчанию тип найден.
+  getEventTypesMock.mockResolvedValue([
+    { id: 'e1', name: 'Консультация', description: null, duration: 30 },
+  ])
 })
 
 function renderPicker(path = '/book/e1') {
@@ -56,6 +61,18 @@ function renderPicker(path = '/book/e1') {
 }
 
 describe('SlotPickerPage', () => {
+  it('под заголовком видна сводка выбранного типа события', async () => {
+    const today = dayIso(0)
+    getSlotsMock.mockResolvedValue({
+      eventTypeId: 'e1',
+      window: { from: today, to: dayIso(13) },
+      days: [],
+    })
+    renderPicker()
+
+    expect(await screen.findByText('Консультация, 30 мин')).toBeInTheDocument()
+  })
+
   it('по умолчанию показывает первый день окна; занятые Слоты отключены', async () => {
     const today = dayIso(0)
     getSlotsMock.mockResolvedValue({

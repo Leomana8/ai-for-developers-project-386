@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom'
 
+import { SiteHeader } from '@/components/SiteHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 const steps = [
   {
@@ -23,14 +23,7 @@ const steps = [
 export function HomePage() {
   return (
     <div className="mx-auto flex min-h-svh w-full max-w-3xl flex-col gap-16 px-6 py-16">
-      <Tabs value="book">
-        <TabsList>
-          <TabsTrigger value="book">Запись</TabsTrigger>
-          <TabsTrigger value="admin" asChild>
-            <Link to="/admin">Админка</Link>
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
+      <SiteHeader section="book" />
 
       <header className="flex flex-col items-start gap-4">
         <Badge variant="secondary">Запись без авторизации</Badge>

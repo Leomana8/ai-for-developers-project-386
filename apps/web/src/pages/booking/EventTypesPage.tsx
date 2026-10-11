@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { SiteHeader } from '@/components/SiteHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -31,9 +32,10 @@ export function EventTypesPage() {
 
   return (
     <main className="mx-auto flex min-h-svh w-full max-w-xl flex-col gap-6 px-6 py-16">
+      <SiteHeader section="book" />
       <header className="flex flex-col gap-2">
         <h1 className="font-heading text-3xl font-semibold">Запись на звонок</h1>
-        <p className="text-muted-foreground">Выберите Тип события — и подходящее время.</p>
+        <p className="text-muted-foreground">Выберите тип события — и подходящее время.</p>
       </header>
 
       <section aria-label="Типы событий" className="flex flex-col gap-4">

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { Button } from '@/components/ui/button'
+import { SiteHeader } from '@/components/SiteHeader'
 import {
   Table,
   TableBody,
@@ -43,16 +45,12 @@ export function MeetingsPage() {
 
   return (
     <main className="mx-auto flex min-h-svh w-full max-w-3xl flex-col gap-6 px-6 py-16">
-      <header className="flex flex-col gap-2">
+      <SiteHeader section="admin" />
+      <header className="flex flex-col items-start gap-2">
         <h1 className="font-heading text-3xl font-semibold">Предстоящие Встречи</h1>
-        <nav className="flex gap-4 text-sm">
-          <Link to="/admin/meetings" className="underline-offset-4 hover:underline">
-            Предстоящие Встречи
-          </Link>
-          <Link to="/admin/event-types/new" className="underline-offset-4 hover:underline">
-            Создать Тип события
-          </Link>
-        </nav>
+        <Button asChild>
+          <Link to="/admin/event-types/new">Создать тип события</Link>
+        </Button>
       </header>
 
       <section aria-label="Предстоящие Встречи" className="flex flex-col gap-3">
@@ -70,7 +68,7 @@ export function MeetingsPage() {
               <TableRow>
                 <TableHead>Гость</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Тип события</TableHead>
+                <TableHead>тип события</TableHead>
                 <TableHead>Слот</TableHead>
                 <TableHead>Создано</TableHead>
               </TableRow>
@@ -91,9 +89,9 @@ export function MeetingsPage() {
       </section>
 
       <div>
-        <Link to="/" className="text-sm underline-offset-4 hover:underline">
-          На главную
-        </Link>
+        <Button asChild variant="outline">
+          <Link to="/">На главную</Link>
+        </Button>
       </div>
     </main>
   )

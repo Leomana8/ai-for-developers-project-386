@@ -76,9 +76,32 @@ describe('маршрутизация', () => {
     expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent(
       'Предстоящие Встречи',
     )
-    expect(screen.getByRole('link', { name: 'Создать Тип события' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Создать тип события' })).toHaveAttribute(
       'href',
       '/admin/event-types/new',
     )
+  })
+})
+
+describe('сквозной хедер', () => {
+  it('гостевая страница: активна вкладка «Запись», «Админка» ведёт на /admin', async () => {
+    renderAt('/book')
+
+    expect(screen.getByRole('tab', { name: 'Запись' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: 'Админка' })).toHaveAttribute('href', '/admin')
+  })
+
+  it('админ-страница: активна вкладка «Админка», «Запись» ведёт на /book', async () => {
+    renderAt('/admin/meetings')
+
+    expect(screen.getByRole('tab', { name: 'Админка' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: 'Запись' })).toHaveAttribute('href', '/book')
+  })
+
+  it('/health — служебная страница без хедера вкладок', async () => {
+    renderAt('/health')
+
+    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent('Состояние сервера')
+    expect(screen.queryByRole('tablist')).not.toBeInTheDocument()
   })
 })

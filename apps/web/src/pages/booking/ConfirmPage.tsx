@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { SiteHeader } from '@/components/SiteHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
@@ -83,6 +84,7 @@ export function ConfirmPage() {
 
   return (
     <main className="mx-auto flex min-h-svh w-full max-w-xl flex-col gap-6 px-6 py-16">
+      <SiteHeader section="book" />
       <header className="flex flex-col gap-2">
         <Badge variant="secondary" className="w-fit">
           Шаг 2 из 2

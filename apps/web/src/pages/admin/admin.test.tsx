@@ -80,14 +80,48 @@ describe('MeetingsPage', () => {
     expect(screen.queryByText('Записаться сейчас нельзя, попробуйте позже')).not.toBeInTheDocument()
   })
 
-  it('ведёт к форме создания Типа события', async () => {
+  it('ведёт к форме создания типа события', async () => {
     getMeetingsMock.mockResolvedValue([])
     renderMeetings()
 
-    expect(screen.getByRole('link', { name: 'Создать Тип события' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Создать тип события' })).toHaveAttribute(
       'href',
       '/admin/event-types/new',
     )
+  })
+
+  it('навигация без самоссылки: «На главную» ведёт на /', async () => {
+    getMeetingsMock.mockResolvedValue([])
+    renderMeetings()
+
+    expect(screen.queryByRole('link', { name: 'Предстоящие Встречи' })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'На главную' })).toHaveAttribute('href', '/')
+  })
+
+  it('хедер: активна вкладка «Админка», неактивная «Запись» ведёт на /book', async () => {
+    getMeetingsMock.mockResolvedValue([])
+    renderMeetings()
+
+    expect(screen.getByRole('tab', { name: 'Админка' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: 'Запись' })).toHaveAttribute('href', '/book')
+  })
+
+  it('колонка таблицы — «тип события» со строчной', async () => {
+    getMeetingsMock.mockResolvedValue([
+      {
+        id: 'm1',
+        eventTypeId: 'e1',
+        eventTypeName: 'Консультация',
+        start: '2026-10-11T09:00:00',
+        end: '2026-10-11T09:30:00',
+        guestName: 'Иван Петров',
+        guestEmail: 'ivan@example.com',
+        createdAt: '2026-10-09T18:00:00',
+      },
+    ])
+    renderMeetings()
+
+    expect(await screen.findByRole('columnheader', { name: 'тип события' })).toBeInTheDocument()
   })
 })
 
@@ -125,7 +159,7 @@ describe('EventTypeFormPage', () => {
 
     fireEvent.input(screen.getByLabelText('Название'), { target: { value: 'Менторинг' } })
     fireEvent.input(screen.getByLabelText(/Длительность/), { target: { value: '60' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Создать Тип события' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Создать тип события' }))
 
     expect(createEventTypeMock).toHaveBeenCalledWith({
       name: 'Менторинг',
@@ -142,7 +176,7 @@ describe('EventTypeFormPage', () => {
 
     fireEvent.input(screen.getByLabelText('Название'), { target: { value: 'Менторинг' } })
     fireEvent.input(screen.getByLabelText(/Длительность/), { target: { value: '50' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Создать Тип события' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Создать тип события' }))
 
     expect(
       await screen.findByText('Длительность — кратна 15, от 15 до 90 минут'),
@@ -154,7 +188,7 @@ describe('EventTypeFormPage', () => {
     renderForm()
 
     fireEvent.input(screen.getByLabelText(/Длительность/), { target: { value: '30' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Создать Тип события' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Создать тип события' }))
 
     expect(await screen.findByText('Укажите название')).toBeInTheDocument()
     expect(createEventType).not.toHaveBeenCalled()
@@ -166,7 +200,7 @@ describe('EventTypeFormPage', () => {
 
     fireEvent.input(screen.getByLabelText('Название'), { target: { value: 'Менторинг' } })
     fireEvent.input(screen.getByLabelText(/Длительность/), { target: { value: '60' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Создать Тип события' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Создать тип события' }))
 
     expect(await screen.findByText('Сервер недоступен, попробуйте позже')).toBeInTheDocument()
     expect(screen.queryByText('Записаться сейчас нельзя, попробуйте позже')).not.toBeInTheDocument()
@@ -188,7 +222,7 @@ describe('EventTypeFormPage', () => {
 
     fireEvent.input(screen.getByLabelText('Название'), { target: { value: 'Менторинг' } })
     fireEvent.input(screen.getByLabelText(/Длительность/), { target: { value: '60' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Создать Тип события' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Создать тип события' }))
 
     expect(await screen.findByText('too long')).toBeInTheDocument()
     expect((await screen.findByTestId('location')).textContent).toBe('/admin/event-types/new')

@@ -15,6 +15,14 @@ beforeEach(() => {
 })
 
 describe('HealthPage', () => {
+  it('служебная страница — без хедера вкладок', () => {
+    getMock.mockResolvedValue({ data: { status: 'ok' } })
+
+    render(<HealthPage />)
+
+    expect(screen.queryByRole('tablist')).not.toBeInTheDocument()
+  })
+
   it('запрашивает /api/health и показывает «Сервер отвечает ✓»', async () => {
     getMock.mockResolvedValue({ data: { status: 'ok' } })
 

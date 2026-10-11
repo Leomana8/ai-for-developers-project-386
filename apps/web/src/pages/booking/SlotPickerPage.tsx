@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
+import { SiteHeader } from '@/components/SiteHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Calendar, CalendarDayButton } from '@/components/ui/calendar'
-import { apiErrorMessage, getSlots } from '@/lib/api'
+import { apiErrorMessage, getEventTypes, getSlots } from '@/lib/api'
 import { formatDayLabel, formatTimeOfDay, isoDay, parseIsoDay } from '@/lib/datetime'
 import type { components } from '@/api/schema'
 
 type Availability = components['schemas']['Availability']
+type EventType = components['schemas']['EventType']
 
 // /book/:eventTypeId?date= — календарь окна записи и выбор Слота.
 // Состояние дня живёт в URL; выбранный Слот сбрасывается при смене дня.
@@ -18,6 +20,7 @@ export function SlotPickerPage() {
   const navigate = useNavigate()
 
   const [availability, setAvailability] = useState<Availability | null>(null)
+  const [eventType, setEventType] = useState<EventType | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null)
 
@@ -30,6 +33,24 @@ export function SlotPickerPage() {
       },
       (error: unknown) => {
         if (!cancelled) setErrorMessage(apiErrorMessage(error))
+      },
+    )
+    return () => {
+      cancelled = true
+    }
+  }, [eventTypeId])
+
+  // Сводка типа события — списком типов с поиском по id (как на подтверждении);
+  // при сбое сводку просто не показываем, сетка Слотов ни на что не влияет.
+  useEffect(() => {
+    if (!eventTypeId) return
+    let cancelled = false
+    getEventTypes().then(
+      (types) => {
+        if (!cancelled) setEventType(types.find((type) => type.id === eventTypeId) ?? null)
+      },
+      () => {
+        if (!cancelled) setEventType(null)
       },
     )
     return () => {
@@ -60,11 +81,17 @@ export function SlotPickerPage() {
 
   return (
     <main className="mx-auto flex min-h-svh w-full max-w-xl flex-col gap-6 px-6 py-16">
+      <SiteHeader section="book" />
       <header className="flex flex-col gap-2">
         <Badge variant="secondary" className="w-fit">
           Шаг 1 из 2
         </Badge>
         <h1 className="font-heading text-3xl font-semibold">Выберите Слот</h1>
+        {eventType !== null && (
+          <p className="text-muted-foreground">
+            {eventType.name}, {eventType.duration} мин
+          </p>
+        )}
       </header>
 
       {errorMessage !== null ? (

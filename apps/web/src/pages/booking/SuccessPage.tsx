@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 
+import { SiteHeader } from '@/components/SiteHeader'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatDayTime } from '@/lib/datetime'
@@ -15,6 +16,7 @@ export function SuccessPage() {
 
   return (
     <main className="mx-auto flex min-h-svh w-full max-w-xl flex-col items-start justify-center gap-6 px-6 py-16">
+      <SiteHeader section="book" />
       <header className="flex flex-col gap-2">
         <h1 className="font-heading text-3xl font-semibold">Вы записаны!</h1>
         <p className="text-muted-foreground">

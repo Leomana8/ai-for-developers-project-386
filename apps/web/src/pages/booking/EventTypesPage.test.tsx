@@ -49,6 +49,7 @@ describe('EventTypesPage', () => {
     ])
     renderTypes()
 
+    expect(screen.getByText('Выберите тип события — и подходящее время.')).toBeInTheDocument()
     expect(await screen.findByText('Знакомство')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Знакомство/ })).toHaveAttribute('href', '/book/e1')
     expect(screen.getByRole('link', { name: /Менторинг/ })).toHaveAttribute('href', '/book/e2')
