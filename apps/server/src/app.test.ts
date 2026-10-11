@@ -447,6 +447,27 @@ describe('meetings', () => {
     expect(payload.error.code).toBe('validation_error')
     expect(Object.keys(payload.error.fields)).toContain('guestName')
   })
+
+  // Регрессия: ошибки валидатора схемы (minLength, format email) должны приходить
+  // с именами полей тела, а не JSON Pointer'ами ('/body/guestName') — иначе
+  // клиент не сопоставит их с формами (fix(web): 422 out_of_window, openapi.ts).
+  it('responds 422 with plain body field names for schema-level validation', async () => {
+    const blankName = await postMeeting({ guestName: '' })
+    expect(blankName.status).toBe(422)
+    const blankPayload = await blankName.json()
+    expect(blankPayload.error.code).toBe('validation_error')
+    expect(Object.keys(blankPayload.error.fields)).toContain('guestName')
+
+    const badEmail = await postMeeting({ guestEmail: 'not-an-email' })
+    expect(badEmail.status).toBe(422)
+    const badEmailPayload = await badEmail.json()
+    expect(badEmailPayload.error.code).toBe('validation_error')
+    expect(Object.keys(badEmailPayload.error.fields)).toContain('guestEmail')
+
+    for (const payload of [blankPayload, badEmailPayload]) {
+      expect(Object.keys(payload.error.fields).some((key) => key.startsWith('/'))).toBe(false)
+    }
+  })
 })
 
 describe('createApp() storage isolation', () => {

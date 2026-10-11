@@ -37,6 +37,17 @@ export function openApiValidator() {
 
 type ValidatorIssue = { path?: string; message?: string }
 
+// JSON Pointer валидатора ('/body/guestName') → имя поля запроса ('guestName'):
+// ключи полей в ErrorEnvelope должны совпадать с ключами тела (спека §5 —
+// «422 со списком полей»), иначе клиент не сопоставит их с формами.
+// Указатели вне тела ('/start') нормализуем без ведущего слэша, пустой — 'request'.
+function fieldKey(issuePath: string | undefined): string {
+  if (issuePath === undefined || issuePath === '') return 'request'
+  const parts = issuePath.split('/').filter(Boolean)
+  if (parts[0] === 'body') return parts.slice(1).join('.') || 'body'
+  return parts.join('.')
+}
+
 function isValidatorFailure(err: unknown): err is { status: number; errors: ValidatorIssue[] } {
   return (
     typeof err === 'object' &&
@@ -68,7 +79,7 @@ export const validationErrorHandler: ErrorRequestHandler<Record<string, string>,
   if (isValidatorFailure(err) && err.status < 500) {
     const fields: Record<string, string> = {}
     for (const issue of err.errors) {
-      const key = issue.path ?? 'request'
+      const key = fieldKey(issue.path)
       const message = issue.message ?? 'Invalid value'
       fields[key] = key in fields ? `${fields[key]}; ${message}` : message
     }
