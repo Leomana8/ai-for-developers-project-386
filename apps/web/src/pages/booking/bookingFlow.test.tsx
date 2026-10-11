@@ -197,7 +197,36 @@ describe('гостевой поток записи', () => {
     expect(screen.getByTestId('location').textContent).toBe(`/book/e1`)
   })
 
+  it('клиентская валидация: пустое имя — «Укажите имя», запрос не уходит', async () => {
+    getEventTypesMock.mockResolvedValue([eventType])
+    const today = isoDay(0)
+    renderBooking(`/book/e1/confirm?start=${encodeURIComponent(`${today}T09:00:00`)}`)
+
+    fireEvent.input(await screen.findByLabelText('Email'), {
+      target: { value: 'ivan@example.com' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Записаться' }))
+
+    expect(await screen.findByText('Укажите имя')).toBeInTheDocument()
+    expect(createMeetingMock).not.toHaveBeenCalled()
+  })
+
+  it('клиентская валидация: неверный email — «Похоже, в email ошибка», запрос не уходит', async () => {
+    getEventTypesMock.mockResolvedValue([eventType])
+    const today = isoDay(0)
+    renderBooking(`/book/e1/confirm?start=${encodeURIComponent(`${today}T09:00:00`)}`)
+
+    fireEvent.input(await screen.findByLabelText('Имя'), { target: { value: 'Иван Петров' } })
+    fireEvent.input(screen.getByLabelText('Email'), { target: { value: 'not-an-email' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Записаться' }))
+
+    expect(await screen.findByText('Похоже, в email ошибка')).toBeInTheDocument()
+    expect(createMeetingMock).not.toHaveBeenCalled()
+  })
+
   it('422 → ошибки полей из конверта', async () => {
+    // Подсказки клиентской валидации пройдены; сервер вернул ошибки полей —
+    // рендерим их как есть (тексты сервера — технический fallback, §5).
     getEventTypesMock.mockResolvedValue([eventType])
     const today = isoDay(0)
     createMeetingMock.mockRejectedValue(
@@ -213,7 +242,7 @@ describe('гостевой поток записи', () => {
     renderBooking(`/book/e1/confirm?start=${encodeURIComponent(`${today}T09:00:00`)}`)
 
     fireEvent.input(await screen.findByLabelText('Имя'), { target: { value: 'Иван Петров' } })
-    fireEvent.input(screen.getByLabelText('Email'), { target: { value: 'not-an-email' } })
+    fireEvent.input(screen.getByLabelText('Email'), { target: { value: 'ivan@example.com' } })
     fireEvent.click(screen.getByRole('button', { name: 'Записаться' }))
 
     expect(await screen.findByText('must be a valid email')).toBeInTheDocument()

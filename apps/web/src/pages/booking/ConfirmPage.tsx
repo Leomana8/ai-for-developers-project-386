@@ -30,6 +30,19 @@ export function ConfirmPage() {
 
   const start = searchParams.get('start')
 
+  // Клиентская валидация зеркалит правила сервера; тексты — канон §5 «Запись».
+  function validate(): Record<string, string> {
+    const errors: Record<string, string> = {}
+    const name = guestName.trim()
+    const email = guestEmail.trim()
+    if (name === '') errors.guestName = 'Укажите имя'
+    else if (name.length > 100) errors.guestName = 'Имя не длиннее 100 символов'
+    if (email === '') errors.guestEmail = 'Укажите email'
+    else if (email.length > 254) errors.guestEmail = 'Email не длиннее 254 символов'
+    else if (!/^[^\s@]+@[^\s@]+$/.test(email)) errors.guestEmail = 'Похоже, в email ошибка'
+    return errors
+  }
+
   useEffect(() => {
     if (!eventTypeId) return
     let cancelled = false
@@ -57,6 +70,11 @@ export function ConfirmPage() {
     setSlotTaken(false)
     setFieldErrors({})
     setErrorMessage(null)
+
+    const errors = validate()
+    setFieldErrors(errors)
+    if (Object.keys(errors).length > 0) return
+
     setSubmission('submitting')
 
     try {
