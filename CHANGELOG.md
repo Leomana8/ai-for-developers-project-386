@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.1.0](https://github.com/Leomana8/ai-for-developers-project-386/compare/v1.0.0...v1.1.0) (2026-10-12)
+
+
+### Features
+
+* «Календарь звонков» — Типы событий, Слоты, Встречи и экраны web ([a7dd1c5](https://github.com/Leomana8/ai-for-developers-project-386/commit/a7dd1c53edbfe923345cb63690dd06b819becd0a))
+* **server:** in-memory store, seed and Event Types endpoints ([0a82ae1](https://github.com/Leomana8/ai-for-developers-project-386/commit/0a82ae17b1a898012181c24b99973670528c581b))
+* **server:** meeting creation and upcoming meetings list ([a422f26](https://github.com/Leomana8/ai-for-developers-project-386/commit/a422f262d078be77c525f572fe4a303a26f38205))
+* **server:** slot availability in a 14-day booking window ([bc89d60](https://github.com/Leomana8/ai-for-developers-project-386/commit/bc89d602052603989e8ec0cf16bc8ec5192fdecf))
+* **server:** валидация запросов по спеке и заготовки маршрутов ([165fbba](https://github.com/Leomana8/ai-for-developers-project-386/commit/165fbbae607d62cb67ed176bfd9fde2d10a2824d))
+* **server:** типы API из OpenAPI и цепочка генерации ([c5b7647](https://github.com/Leomana8/ai-for-developers-project-386/commit/c5b76472bcaaa2ab27e2c92bbbee794548eed0a4))
+* **web:** admin area ([fd2517b](https://github.com/Leomana8/ai-for-developers-project-386/commit/fd2517bf0d86f5443faef3f870b9c62f4e0e1177))
+* **web:** guest booking flow ([ae67263](https://github.com/Leomana8/ai-for-developers-project-386/commit/ae672638d5cb16be6c042c693a365e1a8943a531))
+* **web:** homepage with event types from the API ([386618a](https://github.com/Leomana8/ai-for-developers-project-386/commit/386618aabc0acfdc7b0beabb9220b8411d0a2f16))
+* **web:** typed data layer and shadcn components ([c0ad33a](https://github.com/Leomana8/ai-for-developers-project-386/commit/c0ad33aff152f9484bdc0a6f5cd2c3de3bd03744))
+* **web:** вкладки «Запись»/«Админка» на главной ([d9f6d75](https://github.com/Leomana8/ai-for-developers-project-386/commit/d9f6d7525f548945bd4602f3cd91438a781b899f)), closes [#33](https://github.com/Leomana8/ai-for-developers-project-386/issues/33)
+* **web:** клиентский SDK из TypeSpec (openapi-fetch) ([1faf1fc](https://github.com/Leomana8/ai-for-developers-project-386/commit/1faf1fca2ff9bddf0c4a2d95c2bd3b3dc4f59b4c))
+* **web:** подсказки валидации на подтверждении записи ([7d56f34](https://github.com/Leomana8/ai-for-developers-project-386/commit/7d56f34e413686e374a3bc95ee46361a31cde593))
+* **web:** сквозной хедер вкладок и тексты экранов по §7 спеки ([d24f3a1](https://github.com/Leomana8/ai-for-developers-project-386/commit/d24f3a1c15d50cbba10ea29fbcf33c65d5982f21))
+* клиентский SDK и серверная валидация по OpenAPI-контракту ([0ff5880](https://github.com/Leomana8/ai-for-developers-project-386/commit/0ff5880409ed6ec05de2efbc89bbc2b98ef34c8f))
+
+
+### Bug Fixes
+
+* **server:** канонические русские message конверта ошибок по §6 ([470c601](https://github.com/Leomana8/ai-for-developers-project-386/commit/470c60198a17ab67331ea2d09e7d3b321a0a9c2f))
+* **server:** канонические русские тексты полевых ошибок ([69bba06](https://github.com/Leomana8/ai-for-developers-project-386/commit/69bba06c4ffb87ba0e23fbbedc7d32c2941a8334))
+* **server:** ключи полей 422 — имена полей тела, не JSON Pointer ([07f6eac](https://github.com/Leomana8/ai-for-developers-project-386/commit/07f6eacd12008ce621b588fc8664e1cb48fc466f))
+* **web:** алерт недоступности Слота строго по §7 и возврат на выбранный день ([b35b204](https://github.com/Leomana8/ai-for-developers-project-386/commit/b35b2048ffbbc78a70900d1ed030bbd190d4ccf0))
+* **web:** заметная обработка 422 out_of_window на подтверждении записи ([5016473](https://github.com/Leomana8/ai-for-developers-project-386/commit/501647395c62b9a7b4dcd795c9eabb867481b8c6))
+* **web:** текст недоступности для Админки ([20f73f1](https://github.com/Leomana8/ai-for-developers-project-386/commit/20f73f1fc0151789f939ce53eb863f2560c0d98c))
+* **web:** число свободных Слотов видно и при нуле ([8aee61c](https://github.com/Leomana8/ai-for-developers-project-386/commit/8aee61cd03bfff234ee46fb873efbe92170563f5))
+
 ## 1.0.0 (2026-10-10)
 
 
