@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Alert, AlertTitle } from '@/components/ui/alert'
 import { SiteHeader } from '@/components/SiteHeader'
@@ -6,13 +6,17 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { ApiError, apiErrorMessage, createMeeting, getEventTypes } from '@/lib/api'
+import { useEventType } from '@/hooks/useEventType'
+import { ApiError, apiErrorMessage, createMeeting } from '@/lib/api'
 import { formatDayTime } from '@/lib/datetime'
-import type { components } from '@/api/schema'
 
-type EventType = components['schemas']['EventType']
+// Отдельного статуса «ошибка» нет: любой сбой уже показан через slotStatus,
+// fieldErrors или errorMessage, и четвёртое состояние было бы мёртвым.
+type Submission = 'idle' | 'submitting'
 
-type Submission = 'idle' | 'submitting' | 'error'
+// Слот был предложен календарём, но к моменту отправки занят (409 slot_taken)
+// или уже вне окна (422 out_of_window). Текст алерта по §7 у обоих один.
+type SlotStatus = 'none' | 'taken' | 'expired'
 
 // /book/:eventTypeId/confirm?start= — подтверждение Записи: имя и email Гостя.
 export function ConfirmPage() {
@@ -20,11 +24,11 @@ export function ConfirmPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
 
-  const [eventType, setEventType] = useState<EventType | null | 'loading'>('loading')
+  const eventTypeState = useEventType(eventTypeId)
   const [guestName, setGuestName] = useState('')
   const [guestEmail, setGuestEmail] = useState('')
   const [submission, setSubmission] = useState<Submission>('idle')
-  const [slotTaken, setSlotTaken] = useState(false)
+  const [slotStatus, setSlotStatus] = useState<SlotStatus>('none')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
@@ -43,22 +47,6 @@ export function ConfirmPage() {
     return errors
   }
 
-  useEffect(() => {
-    if (!eventTypeId) return
-    let cancelled = false
-    getEventTypes().then(
-      (types) => {
-        if (!cancelled) setEventType(types.find((type) => type.id === eventTypeId) ?? null)
-      },
-      (error: unknown) => {
-        if (!cancelled) setErrorMessage(apiErrorMessage(error))
-      },
-    )
-    return () => {
-      cancelled = true
-    }
-  }, [eventTypeId])
-
   if (!eventTypeId || start === null) {
     return <Navigate to="/book" replace />
   }
@@ -70,7 +58,7 @@ export function ConfirmPage() {
     event.preventDefault()
     if (submission === 'submitting' || !eventTypeId || start === null) return
 
-    setSlotTaken(false)
+    setSlotStatus('none')
     setFieldErrors({})
     setErrorMessage(null)
 
@@ -89,14 +77,13 @@ export function ConfirmPage() {
       })
       navigate('/book/success', { state: { meeting } })
     } catch (error: unknown) {
-      setSubmission('error')
-      if (
-        error instanceof ApiError &&
-        (error.code === 'slot_taken' || error.code === 'out_of_window')
-      ) {
-        // 409 — гонка за Слот; 422 out_of_window — Слот был предложен
-        // календарём, но к моменту отправки его время прошло (§8).
-        setSlotTaken(true)
+      if (error instanceof ApiError && error.code === 'slot_taken') {
+        // 409 — гонка за Слот.
+        setSlotStatus('taken')
+      } else if (error instanceof ApiError && error.code === 'out_of_window') {
+        // 422 out_of_window — Слот был предложен календарём, но к моменту
+        // отправки его время прошло (§8).
+        setSlotStatus('expired')
       } else if (error instanceof ApiError && error.code === 'validation_error') {
         setFieldErrors(error.fields)
       } else {
@@ -107,6 +94,7 @@ export function ConfirmPage() {
   }
 
   const submitting = submission === 'submitting'
+  const eventType = eventTypeState.status === 'ready' ? eventTypeState.eventType : null
 
   return (
     <main className="mx-auto flex min-h-svh w-full max-w-xl flex-col gap-6 px-6 py-16">
@@ -116,23 +104,27 @@ export function ConfirmPage() {
           Шаг 2 из 2
         </Badge>
         <h1 className="font-heading text-3xl font-semibold">Подтвердите Запись</h1>
-        {eventType !== 'loading' && eventType !== null && (
+        {eventType !== null && (
           <p className="text-muted-foreground">
             {eventType.name}, {eventType.duration} мин — {formatDayTime(start)}
           </p>
         )}
       </header>
 
-      {eventType === 'loading' ? (
+      {eventTypeState.status === 'loading' ? (
         <p className="text-sm text-muted-foreground">Загружаем тип события…</p>
-      ) : eventType === null ? (
+      ) : eventTypeState.status === 'missing' ? (
         <div role="alert" className="flex flex-col gap-3 text-sm">
           <p className="text-destructive">Тип события не найден</p>
           <Button asChild variant="outline" className="w-fit">
             <Link to="/book">К списку типов</Link>
           </Button>
         </div>
-      ) : slotTaken ? (
+      ) : eventTypeState.status === 'failed' ? (
+        <div role="alert" className="text-sm text-destructive">
+          {eventTypeState.message}
+        </div>
+      ) : slotStatus !== 'none' ? (
         <Alert role="alert">
           <AlertTitle>Слот больше недоступен</AlertTitle>
           <Button className="w-fit" onClick={() => navigate(backToSlots, { replace: true })}>

@@ -5,12 +5,12 @@ import { SiteHeader } from '@/components/SiteHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Calendar, CalendarDayButton } from '@/components/ui/calendar'
-import { apiErrorMessage, getEventTypes, getSlots } from '@/lib/api'
+import { useEventType } from '@/hooks/useEventType'
+import { apiErrorMessage, getSlots } from '@/lib/api'
 import { formatDayLabel, formatTimeOfDay, isoDay, parseIsoDay } from '@/lib/datetime'
 import type { components } from '@/api/schema'
 
 type Availability = components['schemas']['Availability']
-type EventType = components['schemas']['EventType']
 
 // /book/:eventTypeId?date= — календарь окна записи и выбор Слота.
 // Состояние дня живёт в URL; выбранный Слот сбрасывается при смене дня.
@@ -20,9 +20,13 @@ export function SlotPickerPage() {
   const navigate = useNavigate()
 
   const [availability, setAvailability] = useState<Availability | null>(null)
-  const [eventType, setEventType] = useState<EventType | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null)
+
+  // Сводка типа события — общим хуком с подтверждением; при сбое сводку просто
+  // не показываем, сетка Слотов ни на что не влияет.
+  const eventTypeState = useEventType(eventTypeId)
+  const eventType = eventTypeState.status === 'ready' ? eventTypeState.eventType : null
 
   useEffect(() => {
     if (!eventTypeId) return
@@ -33,24 +37,6 @@ export function SlotPickerPage() {
       },
       (error: unknown) => {
         if (!cancelled) setErrorMessage(apiErrorMessage(error))
-      },
-    )
-    return () => {
-      cancelled = true
-    }
-  }, [eventTypeId])
-
-  // Сводка типа события — списком типов с поиском по id (как на подтверждении);
-  // при сбое сводку просто не показываем, сетка Слотов ни на что не влияет.
-  useEffect(() => {
-    if (!eventTypeId) return
-    let cancelled = false
-    getEventTypes().then(
-      (types) => {
-        if (!cancelled) setEventType(types.find((type) => type.id === eventTypeId) ?? null)
-      },
-      () => {
-        if (!cancelled) setEventType(null)
       },
     )
     return () => {

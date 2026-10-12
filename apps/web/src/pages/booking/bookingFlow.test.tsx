@@ -256,4 +256,33 @@ describe('гостевой поток записи', () => {
 
     expect(await screen.findByText('must be a valid email')).toBeInTheDocument()
   })
+
+  it('неизвестный тип события — «Тип события не найден» и возврат к списку', async () => {
+    const today = isoDay(0)
+    mockApi({
+      'GET /api/event-types': () => Response.json([eventType]),
+    })
+
+    renderBooking(`/book/nope/confirm?start=${encodeURIComponent(`${today}T09:00:00`)}`)
+
+    expect(await screen.findByText('Тип события не найден')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('link', { name: 'К списку типов' }))
+    expect(await screen.findByRole('heading', { name: 'Запись на звонок' })).toBeInTheDocument()
+  })
+
+  it('сбой загрузки типов событий — понятный текст, а не вечное «Загружаем…»', async () => {
+    const today = isoDay(0)
+    mockApi({
+      'GET /api/event-types': () => {
+        throw new TypeError('network down')
+      },
+    })
+
+    renderBooking(`/book/e1/confirm?start=${encodeURIComponent(`${today}T09:00:00`)}`)
+
+    expect(
+      await screen.findByText('Записаться сейчас нельзя, попробуйте позже'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('Загружаем тип события…')).not.toBeInTheDocument()
+  })
 })
