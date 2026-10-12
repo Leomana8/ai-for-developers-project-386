@@ -14,6 +14,12 @@ export function isoDay(date: Date): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
+// Строка вне формата (мусорный query-параметр ?start=) не должна доходить до
+// format(): на Invalid Date date-fns бросает RangeError, и падает всё приложение.
+export function isValidDateTime(iso: string): boolean {
+  return !Number.isNaN(new Date(iso).getTime())
+}
+
 export function formatDayTime(iso: string): string {
   return format(new Date(iso), 'd MMMM, HH:mm', { locale: ru })
 }

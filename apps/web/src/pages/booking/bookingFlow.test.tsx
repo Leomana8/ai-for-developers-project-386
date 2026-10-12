@@ -285,4 +285,22 @@ describe('гостевой поток записи', () => {
     ).toBeInTheDocument()
     expect(screen.queryByText('Загружаем тип события…')).not.toBeInTheDocument()
   })
+
+  // Невалидный ?start= раньше доходил до format() и ронял приложение
+  // (RangeError: Invalid time value). Теперь — редирект на список типов,
+  // как и при полностью отсутствующем параметре.
+  it.each([
+    ['пустой', ''],
+    ['мусор', 'мусор'],
+    ['несуществующая дата', '2026-13-45T99:99'],
+  ])('невалидный ?start= (%s) → редирект на /book без краша', async (_case, value) => {
+    mockApi({
+      'GET /api/event-types': () => Response.json([eventType]),
+    })
+
+    renderBooking(`/book/e1/confirm?start=${encodeURIComponent(value)}`)
+
+    expect(await screen.findByRole('heading', { name: 'Запись на звонок' })).toBeInTheDocument()
+    expect(screen.getByTestId('location').textContent).toBe('/book')
+  })
 })
