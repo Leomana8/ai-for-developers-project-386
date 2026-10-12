@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+// Русская локаль react-day-picker: date-fns ru плюс подписи самого DayPicker
+// (месяц, дни недели, aria-label навигации), которых в date-fns/locale нет.
+// С локалью в lib/datetime намеренно не объединяем: там ru только для format().
+// Начало недели с понедельника приходит из локали (ru.options.weekStartsOn = 1),
+// поэтому отдельный weekStartsOn в Calendar не нужен.
+import { ru } from 'react-day-picker/locale'
 
 import { SiteHeader } from '@/components/SiteHeader'
 import { Badge } from '@/components/ui/badge'
@@ -90,6 +96,7 @@ export function SlotPickerPage() {
         <>
           <Calendar
             mode="single"
+            locale={ru}
             selected={selectedIso !== undefined ? parseIsoDay(selectedIso) : undefined}
             onSelect={selectDate}
             disabled={[

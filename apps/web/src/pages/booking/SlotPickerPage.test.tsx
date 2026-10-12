@@ -182,4 +182,25 @@ describe('SlotPickerPage', () => {
 
     expect(await screen.findByRole('button', { name: '10:00' })).toBeInTheDocument()
   })
+
+  it('календарь на русском, неделя начинается с понедельника', async () => {
+    // Окно в будущем, чтобы месяц в заголовке не зависел от текущей даты.
+    mockApi({
+      'GET /api/event-types/e1/slots': () =>
+        Response.json({
+          eventTypeId: 'e1',
+          window: { from: '2026-10-05', to: '2026-10-19' },
+          days: [],
+        }),
+    })
+    const { container } = renderPicker()
+
+    // Заголовок месяца в русской локали (date-fns ru, родительный падеж).
+    expect(await screen.findByText('октябрь 2026')).toBeInTheDocument()
+    // Дни недели от «пн», а не от «вс»: локаль ru плюс начало недели с понедельника.
+    const weekdays = [...container.querySelectorAll('thead th')].map((cell) => cell.textContent)
+    expect(weekdays).toEqual(['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'])
+    // aria-label навигации тоже русский, а не en-US по умолчанию.
+    expect(screen.getByRole('button', { name: 'Перейти к предыдущему месяцу' })).toBeInTheDocument()
+  })
 })
