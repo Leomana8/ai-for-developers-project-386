@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Alert, AlertTitle } from '@/components/ui/alert'
 import { SiteHeader } from '@/components/SiteHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -24,7 +24,7 @@ export function ConfirmPage() {
   const [guestName, setGuestName] = useState('')
   const [guestEmail, setGuestEmail] = useState('')
   const [submission, setSubmission] = useState<Submission>('idle')
-  const [slotTaken, setSlotTaken] = useState<false | 'taken' | 'expired'>(false)
+  const [slotTaken, setSlotTaken] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
@@ -63,6 +63,9 @@ export function ConfirmPage() {
     return <Navigate to="/book" replace />
   }
 
+  // Возврат в календарь — на день выбранного Слота, без потери контекста (§4 п. 22).
+  const backToSlots = `/book/${eventTypeId}?date=${encodeURIComponent(start.slice(0, 10))}`
+
   async function submit(event: FormEvent) {
     event.preventDefault()
     if (submission === 'submitting' || !eventTypeId || start === null) return
@@ -87,11 +90,13 @@ export function ConfirmPage() {
       navigate('/book/success', { state: { meeting } })
     } catch (error: unknown) {
       setSubmission('error')
-      if (error instanceof ApiError && error.code === 'slot_taken') {
-        setSlotTaken('taken')
-      } else if (error instanceof ApiError && error.code === 'out_of_window') {
-        // Слот был предложен календарём, но к моменту отправки его время прошло.
-        setSlotTaken('expired')
+      if (
+        error instanceof ApiError &&
+        (error.code === 'slot_taken' || error.code === 'out_of_window')
+      ) {
+        // 409 — гонка за Слот; 422 out_of_window — Слот был предложен
+        // календарём, но к моменту отправки его время прошло (§8).
+        setSlotTaken(true)
       } else if (error instanceof ApiError && error.code === 'validation_error') {
         setFieldErrors(error.fields)
       } else {
@@ -127,18 +132,10 @@ export function ConfirmPage() {
             <Link to="/book">К списку типов</Link>
           </Button>
         </div>
-      ) : slotTaken !== false ? (
+      ) : slotTaken ? (
         <Alert role="alert">
           <AlertTitle>Слот больше недоступен</AlertTitle>
-          <AlertDescription>
-            {slotTaken === 'taken'
-              ? 'Кто-то занял это время раньше — выберите другой Слот.'
-              : 'Время этого Слота уже прошло — выберите другой Слот.'}
-          </AlertDescription>
-          <Button
-            className="w-fit"
-            onClick={() => navigate(`/book/${eventTypeId}`, { replace: true })}
-          >
+          <Button className="w-fit" onClick={() => navigate(backToSlots, { replace: true })}>
             Выбрать другой слот
           </Button>
         </Alert>
@@ -193,7 +190,7 @@ export function ConfirmPage() {
       )}
 
       <Button asChild variant="outline">
-        <Link to={`/book/${eventTypeId}`}>Назад к слотам</Link>
+        <Link to={backToSlots}>Назад к слотам</Link>
       </Button>
     </main>
   )
