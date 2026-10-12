@@ -123,7 +123,8 @@ export function SlotPickerPage() {
                     aria-label={formatDayLabel(isoDay(day.date))}
                   >
                     {dayButtonProps.children}
-                    {count > 0 && <span className="tabular-nums">·{count}</span>}
+                    {/* Число свободных Слотов на каждом дне, включая 0 (§4 п. 11) */}
+                    <span className="tabular-nums">·{count}</span>
                   </CalendarDayButton>
                 )
               },
