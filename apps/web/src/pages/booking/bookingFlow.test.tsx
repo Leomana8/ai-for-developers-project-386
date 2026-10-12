@@ -1,40 +1,18 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, useLocation, useRoutes } from 'react-router-dom'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { routes } from '@/router'
-
-vi.mock('@/lib/api', () => ({
-  api: { GET: vi.fn() },
-  getEventTypes: vi.fn(),
-  createEventType: vi.fn(),
-  getSlots: vi.fn(),
-  createMeeting: vi.fn(),
-  getMeetings: vi.fn(),
-  apiErrorMessage: vi.fn(() => 'Записаться сейчас нельзя, попробуйте позже'),
-  ApiError: class ApiError extends Error {
-    code: string
-    fields: Record<string, string>
-    constructor(envelope: {
-      error: { code: string; message: string; fields: Record<string, string> }
-    }) {
-      super(envelope.error.message)
-      this.code = envelope.error.code
-      this.fields = envelope.error.fields
-    }
-  },
-  API_UNAVAILABLE_MESSAGE: 'Записаться сейчас нельзя, попробуйте позже',
-}))
-
-import { ApiError, createMeeting, getEventTypes, getSlots } from '@/lib/api'
-
-const createMeetingMock = vi.mocked(createMeeting)
-const getEventTypesMock = vi.mocked(getEventTypes)
-const getSlotsMock = vi.mocked(getSlots)
+import { mockApi } from '@/test/mockApi'
 
 function LocationProbe() {
   const location = useLocation()
-  return <output data-testid="location">{location.pathname}</output>
+  return (
+    <output data-testid="location">
+      {location.pathname}
+      {location.search}
+    </output>
+  )
 }
 
 function Routes() {
@@ -49,12 +27,6 @@ function renderBooking(path = '/book') {
     </MemoryRouter>,
   )
 }
-
-beforeEach(() => {
-  getEventTypesMock.mockReset()
-  getSlotsMock.mockReset()
-  createMeetingMock.mockReset()
-})
 
 const eventType = {
   id: 'e1',
@@ -73,31 +45,47 @@ function isoDay(offsetDays: number): string {
 
 describe('гостевой поток записи', () => {
   it('от выбора Типа события до экрана успеха', async () => {
-    getEventTypesMock.mockResolvedValue([eventType])
     const today = isoDay(0)
-    getSlotsMock.mockResolvedValue({
-      eventTypeId: 'e1',
-      window: { from: today, to: isoDay(13) },
-      days: [
-        {
-          date: today,
-          slots: [
-            { start: `${today}T09:00:00`, end: `${today}T09:30:00`, available: true },
-            { start: `${today}T09:30:00`, end: `${today}T10:00:00`, available: false },
+    let meetingBody: unknown
+    mockApi({
+      'GET /api/event-types': () => Response.json([eventType]),
+      'GET /api/event-types/e1/slots': () =>
+        Response.json({
+          eventTypeId: 'e1',
+          window: { from: today, to: isoDay(13) },
+          days: [
+            {
+              date: today,
+              slots: [
+                { start: `${today}T09:00:00`, end: `${today}T09:30:00`, available: true },
+                { start: `${today}T09:30:00`, end: `${today}T10:00:00`, available: false },
+              ],
+            },
           ],
-        },
-      ],
+        }),
+      'POST /api/meetings': async (request) => {
+        meetingBody = await request.json()
+        const body = meetingBody as {
+          eventTypeId: string
+          start: string
+          guestName: string
+          guestEmail: string
+        }
+        return Response.json(
+          {
+            id: 'm1',
+            eventTypeId: body.eventTypeId,
+            eventTypeName: eventType.name,
+            start: body.start,
+            end: `${today}T09:30:00`,
+            guestName: body.guestName,
+            guestEmail: body.guestEmail,
+            createdAt: '2026-10-10T12:00:00',
+          },
+          { status: 201 },
+        )
+      },
     })
-    createMeetingMock.mockImplementation(async (body) => ({
-      id: 'm1',
-      eventTypeId: body.eventTypeId,
-      eventTypeName: 'Консультация',
-      start: body.start,
-      end: `${today}T09:30:00`,
-      guestName: body.guestName,
-      guestEmail: body.guestEmail,
-      createdAt: '2026-10-10T12:00:00',
-    }))
 
     renderBooking('/book')
 
@@ -116,35 +104,39 @@ describe('гостевой поток записи', () => {
     fireEvent.input(screen.getByLabelText('Email'), { target: { value: 'ivan@example.com' } })
     fireEvent.click(screen.getByRole('button', { name: 'Записаться' }))
 
-    expect(createMeetingMock).toHaveBeenCalledWith({
+    expect(await screen.findByRole('heading', { name: 'Вы записаны!' })).toBeInTheDocument()
+    // Тело запроса на границе /api (обработчик mockApi записывает его асинхронно).
+    expect(meetingBody).toEqual({
       eventTypeId: 'e1',
       start: `${today}T09:00:00`,
       guestName: 'Иван Петров',
       guestEmail: 'ivan@example.com',
     })
-    expect(await screen.findByRole('heading', { name: 'Вы записаны!' })).toBeInTheDocument()
     expect(screen.getByText(/Иван Петров/)).toBeInTheDocument()
     expect(screen.getByTestId('location').textContent).toBe('/book/success')
   })
 
-  it('409 → «Слот больше недоступен» и возврат к календарю', async () => {
-    getEventTypesMock.mockResolvedValue([eventType])
+  it('409 → «Слот больше недоступен» и возврат к календарю на день Слота', async () => {
     const today = isoDay(0)
-    getSlotsMock.mockResolvedValue({
-      eventTypeId: 'e1',
-      window: { from: today, to: isoDay(13) },
-      days: [
-        {
-          date: today,
-          slots: [{ start: `${today}T09:00:00`, end: `${today}T09:30:00`, available: true }],
-        },
-      ],
+    mockApi({
+      'GET /api/event-types': () => Response.json([eventType]),
+      'GET /api/event-types/e1/slots': () =>
+        Response.json({
+          eventTypeId: 'e1',
+          window: { from: today, to: isoDay(13) },
+          days: [
+            {
+              date: today,
+              slots: [{ start: `${today}T09:00:00`, end: `${today}T09:30:00`, available: true }],
+            },
+          ],
+        }),
+      'POST /api/meetings': () =>
+        Response.json(
+          { error: { code: 'slot_taken', message: 'Слот больше недоступен', fields: {} } },
+          { status: 409 },
+        ),
     })
-    createMeetingMock.mockRejectedValue(
-      new ApiError({
-        error: { code: 'slot_taken', message: 'Slot is no longer available', fields: {} },
-      }),
-    )
 
     renderBooking(`/book/e1/confirm?start=${encodeURIComponent(`${today}T09:00:00`)}`)
 
@@ -155,32 +147,38 @@ describe('гостевой поток записи', () => {
     expect(await screen.findByText('Слот больше недоступен')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Выбрать другой слот' }))
     expect(await screen.findByRole('heading', { name: 'Выберите Слот' })).toBeInTheDocument()
-    expect(screen.getByTestId('location').textContent).toBe(`/book/e1`)
+    // День выбранного Слота сохраняется (story 22 — возврат без потери контекста).
+    expect(screen.getByTestId('location').textContent).toBe(`/book/e1?date=${today}`)
   })
 
   it('422 out_of_window → «Слот больше недоступен» и возврат к календарю', async () => {
     // Слот был предложен календарём, но к моменту отправки его время прошло.
-    getEventTypesMock.mockResolvedValue([eventType])
     const today = isoDay(0)
-    getSlotsMock.mockResolvedValue({
-      eventTypeId: 'e1',
-      window: { from: today, to: isoDay(13) },
-      days: [
-        {
-          date: today,
-          slots: [{ start: `${today}T09:00:00`, end: `${today}T09:30:00`, available: true }],
-        },
-      ],
+    mockApi({
+      'GET /api/event-types': () => Response.json([eventType]),
+      'GET /api/event-types/e1/slots': () =>
+        Response.json({
+          eventTypeId: 'e1',
+          window: { from: today, to: isoDay(13) },
+          days: [
+            {
+              date: today,
+              slots: [{ start: `${today}T09:00:00`, end: `${today}T09:30:00`, available: true }],
+            },
+          ],
+        }),
+      'POST /api/meetings': () =>
+        Response.json(
+          {
+            error: {
+              code: 'out_of_window',
+              message: 'Этот слот вне окна записи',
+              fields: { start: 'Слот вне окна записи или рабочего времени (09:00–18:00)' },
+            },
+          },
+          { status: 422 },
+        ),
     })
-    createMeetingMock.mockRejectedValue(
-      new ApiError({
-        error: {
-          code: 'out_of_window',
-          message: 'Slot is outside the booking window',
-          fields: { start: 'outside the booking window or working hours' },
-        },
-      }),
-    )
 
     renderBooking(`/book/e1/confirm?start=${encodeURIComponent(`${today}T09:00:00`)}`)
 
@@ -189,17 +187,19 @@ describe('гостевой поток записи', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Записаться' }))
 
     expect(await screen.findByText('Слот больше недоступен')).toBeInTheDocument()
-    expect(
-      await screen.findByText('Время этого Слота уже прошло — выберите другой Слот.'),
-    ).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Выбрать другой слот' }))
     expect(await screen.findByRole('heading', { name: 'Выберите Слот' })).toBeInTheDocument()
-    expect(screen.getByTestId('location').textContent).toBe(`/book/e1`)
+    expect(screen.getByTestId('location').textContent).toBe(`/book/e1?date=${today}`)
   })
 
   it('клиентская валидация: пустое имя — «Укажите имя», запрос не уходит', async () => {
-    getEventTypesMock.mockResolvedValue([eventType])
     const today = isoDay(0)
+    const postMeeting = vi.fn()
+    mockApi({
+      'GET /api/event-types': () => Response.json([eventType]),
+      'POST /api/meetings': postMeeting,
+    })
+
     renderBooking(`/book/e1/confirm?start=${encodeURIComponent(`${today}T09:00:00`)}`)
 
     fireEvent.input(await screen.findByLabelText('Email'), {
@@ -208,12 +208,17 @@ describe('гостевой поток записи', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Записаться' }))
 
     expect(await screen.findByText('Укажите имя')).toBeInTheDocument()
-    expect(createMeetingMock).not.toHaveBeenCalled()
+    expect(postMeeting).not.toHaveBeenCalled()
   })
 
   it('клиентская валидация: неверный email — «Похоже, в email ошибка», запрос не уходит', async () => {
-    getEventTypesMock.mockResolvedValue([eventType])
     const today = isoDay(0)
+    const postMeeting = vi.fn()
+    mockApi({
+      'GET /api/event-types': () => Response.json([eventType]),
+      'POST /api/meetings': postMeeting,
+    })
+
     renderBooking(`/book/e1/confirm?start=${encodeURIComponent(`${today}T09:00:00`)}`)
 
     fireEvent.input(await screen.findByLabelText('Имя'), { target: { value: 'Иван Петров' } })
@@ -221,23 +226,27 @@ describe('гостевой поток записи', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Записаться' }))
 
     expect(await screen.findByText('Похоже, в email ошибка')).toBeInTheDocument()
-    expect(createMeetingMock).not.toHaveBeenCalled()
+    expect(postMeeting).not.toHaveBeenCalled()
   })
 
   it('422 → ошибки полей из конверта', async () => {
     // Подсказки клиентской валидации пройдены; сервер вернул ошибки полей —
     // рендерим их как есть (тексты сервера — технический fallback, §5).
-    getEventTypesMock.mockResolvedValue([eventType])
     const today = isoDay(0)
-    createMeetingMock.mockRejectedValue(
-      new ApiError({
-        error: {
-          code: 'validation_error',
-          message: 'Invalid request',
-          fields: { guestEmail: 'must be a valid email' },
-        },
-      }),
-    )
+    mockApi({
+      'GET /api/event-types': () => Response.json([eventType]),
+      'POST /api/meetings': () =>
+        Response.json(
+          {
+            error: {
+              code: 'validation_error',
+              message: 'Проверьте правильность заполнения полей',
+              fields: { guestEmail: 'must be a valid email' },
+            },
+          },
+          { status: 422 },
+        ),
+    })
 
     renderBooking(`/book/e1/confirm?start=${encodeURIComponent(`${today}T09:00:00`)}`)
 

@@ -1,39 +1,21 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
-vi.mock('@/lib/api', () => ({
-  api: { GET: vi.fn() },
-  getEventTypes: vi.fn(),
-  createEventType: vi.fn(),
-  getSlots: vi.fn(),
-  createMeeting: vi.fn(),
-  getMeetings: vi.fn(),
-  apiErrorMessage: vi.fn(() => 'Записаться сейчас нельзя, попробуйте позже'),
-  ApiError: class ApiError extends Error {
-    code: string
-    fields: Record<string, string>
-    constructor(envelope: {
-      error: { code: string; message: string; fields: Record<string, string> }
-    }) {
-      super(envelope.error.message)
-      this.code = envelope.error.code
-      this.fields = envelope.error.fields
-    }
-  },
-  API_UNAVAILABLE_MESSAGE: 'Записаться сейчас нельзя, попробуйте позже',
-  ADMIN_UNAVAILABLE_MESSAGE: 'Сервер недоступен, попробуйте позже',
-}))
-
-import { ApiError, createEventType, getMeetings } from '@/lib/api'
 import { EventTypeFormPage } from '@/pages/admin/EventTypeFormPage'
 import { MeetingsPage } from '@/pages/admin/MeetingsPage'
+import { mockApi } from '@/test/mockApi'
 
-const getMeetingsMock = vi.mocked(getMeetings)
-
-beforeEach(() => {
-  getMeetingsMock.mockReset()
-})
+const upcomingMeeting = {
+  id: 'm1',
+  eventTypeId: 'e1',
+  eventTypeName: 'Консультация',
+  start: '2026-10-11T09:00:00',
+  end: '2026-10-11T09:30:00',
+  guestName: 'Иван Петров',
+  guestEmail: 'ivan@example.com',
+  createdAt: '2026-10-09T18:00:00',
+}
 
 function renderMeetings() {
   return render(
@@ -45,18 +27,7 @@ function renderMeetings() {
 
 describe('MeetingsPage', () => {
   it('показывает предстоящие Встречи в таблице', async () => {
-    getMeetingsMock.mockResolvedValue([
-      {
-        id: 'm1',
-        eventTypeId: 'e1',
-        eventTypeName: 'Консультация',
-        start: '2026-10-11T09:00:00',
-        end: '2026-10-11T09:30:00',
-        guestName: 'Иван Петров',
-        guestEmail: 'ivan@example.com',
-        createdAt: '2026-10-09T18:00:00',
-      },
-    ])
+    mockApi({ 'GET /api/meetings': () => Response.json([upcomingMeeting]) })
     renderMeetings()
 
     expect(await screen.findByText('Иван Петров')).toBeInTheDocument()
@@ -66,14 +37,18 @@ describe('MeetingsPage', () => {
   })
 
   it('пустой список → «Пока нет записей»', async () => {
-    getMeetingsMock.mockResolvedValue([])
+    mockApi({ 'GET /api/meetings': () => Response.json([]) })
     renderMeetings()
 
     expect(await screen.findByText('Пока нет записей')).toBeInTheDocument()
   })
 
   it('сетевой сбой → текст Админки, а не гостевой', async () => {
-    getMeetingsMock.mockRejectedValue(new TypeError('fetch failed'))
+    mockApi({
+      'GET /api/meetings': () => {
+        throw new TypeError('fetch failed')
+      },
+    })
     renderMeetings()
 
     expect(await screen.findByText('Сервер недоступен, попробуйте позже')).toBeInTheDocument()
@@ -81,7 +56,7 @@ describe('MeetingsPage', () => {
   })
 
   it('ведёт к форме создания типа события', async () => {
-    getMeetingsMock.mockResolvedValue([])
+    mockApi({ 'GET /api/meetings': () => Response.json([]) })
     renderMeetings()
 
     expect(screen.getByRole('link', { name: 'Создать тип события' })).toHaveAttribute(
@@ -91,7 +66,7 @@ describe('MeetingsPage', () => {
   })
 
   it('навигация без самоссылки: «На главную» ведёт на /', async () => {
-    getMeetingsMock.mockResolvedValue([])
+    mockApi({ 'GET /api/meetings': () => Response.json([]) })
     renderMeetings()
 
     expect(screen.queryByRole('link', { name: 'Предстоящие Встречи' })).not.toBeInTheDocument()
@@ -99,7 +74,7 @@ describe('MeetingsPage', () => {
   })
 
   it('хедер: активна вкладка «Админка», неактивная «Запись» ведёт на /book', async () => {
-    getMeetingsMock.mockResolvedValue([])
+    mockApi({ 'GET /api/meetings': () => Response.json([]) })
     renderMeetings()
 
     expect(screen.getByRole('tab', { name: 'Админка' })).toHaveAttribute('aria-selected', 'true')
@@ -107,18 +82,7 @@ describe('MeetingsPage', () => {
   })
 
   it('колонка таблицы — «тип события» со строчной', async () => {
-    getMeetingsMock.mockResolvedValue([
-      {
-        id: 'm1',
-        eventTypeId: 'e1',
-        eventTypeName: 'Консультация',
-        start: '2026-10-11T09:00:00',
-        end: '2026-10-11T09:30:00',
-        guestName: 'Иван Петров',
-        guestEmail: 'ivan@example.com',
-        createdAt: '2026-10-09T18:00:00',
-      },
-    ])
+    mockApi({ 'GET /api/meetings': () => Response.json([upcomingMeeting]) })
     renderMeetings()
 
     expect(await screen.findByRole('columnheader', { name: 'тип события' })).toBeInTheDocument()
@@ -143,17 +107,16 @@ describe('EventTypeFormPage', () => {
     )
   }
 
-  beforeEach(() => {
-    vi.mocked(createEventType).mockReset()
-  })
-
   it('создаёт Тип события и уходит к списку Встреч', async () => {
-    const createEventTypeMock = vi.mocked(createEventType)
-    createEventTypeMock.mockResolvedValue({
-      id: 'e2',
-      name: 'Менторинг',
-      description: null,
-      duration: 60,
+    let requestBody: unknown
+    mockApi({
+      'POST /api/event-types': async (request) => {
+        requestBody = await request.json()
+        return Response.json(
+          { id: 'e2', name: 'Менторинг', description: null, duration: 60 },
+          { status: 201 },
+        )
+      },
     })
     renderForm()
 
@@ -161,17 +124,16 @@ describe('EventTypeFormPage', () => {
     fireEvent.input(screen.getByLabelText(/Длительность/), { target: { value: '60' } })
     fireEvent.click(screen.getByRole('button', { name: 'Создать тип события' }))
 
-    expect(createEventTypeMock).toHaveBeenCalledWith({
-      name: 'Менторинг',
-      description: null,
-      duration: 60,
-    })
     // Навигация на список Встреч после создания.
     expect(await screen.findByText('meetings')).toBeInTheDocument()
+    // Тело запроса на границе /api (обработчик mockApi записывает его асинхронно).
+    expect(requestBody).toEqual({ name: 'Менторинг', description: null, duration: 60 })
     expect(screen.getByTestId('location').textContent).toBe('/admin/meetings')
   })
 
   it('клиентская валидация: длительность не кратна 15 — не отправляет', async () => {
+    const createEventType = vi.fn()
+    mockApi({ 'POST /api/event-types': createEventType })
     renderForm()
 
     fireEvent.input(screen.getByLabelText('Название'), { target: { value: 'Менторинг' } })
@@ -185,6 +147,8 @@ describe('EventTypeFormPage', () => {
   })
 
   it('клиентская валидация: пустое название', async () => {
+    const createEventType = vi.fn()
+    mockApi({ 'POST /api/event-types': createEventType })
     renderForm()
 
     fireEvent.input(screen.getByLabelText(/Длительность/), { target: { value: '30' } })
@@ -195,7 +159,11 @@ describe('EventTypeFormPage', () => {
   })
 
   it('сетевой сбой → текст Админки, а не гостевой', async () => {
-    vi.mocked(createEventType).mockRejectedValue(new TypeError('fetch failed'))
+    mockApi({
+      'POST /api/event-types': () => {
+        throw new TypeError('fetch failed')
+      },
+    })
     renderForm()
 
     fireEvent.input(screen.getByLabelText('Название'), { target: { value: 'Менторинг' } })
@@ -208,16 +176,21 @@ describe('EventTypeFormPage', () => {
   })
 
   it('422 от сервера → ошибки полей из конверта', async () => {
-    const createEventTypeMock = vi.mocked(createEventType)
-    createEventTypeMock.mockRejectedValue(
-      new ApiError({
-        error: {
-          code: 'validation_error',
-          message: 'Invalid request',
-          fields: { name: 'too long' },
-        },
-      }),
-    )
+    mockApi({
+      'POST /api/event-types': () =>
+        Response.json(
+          {
+            error: {
+              code: 'validation_error',
+              message: 'Проверьте правильность заполнения полей',
+              // Тексты полей валидатора — технический fallback (§5), UI
+              // показывает их как есть.
+              fields: { name: 'too long' },
+            },
+          },
+          { status: 422 },
+        ),
+    })
     renderForm()
 
     fireEvent.input(screen.getByLabelText('Название'), { target: { value: 'Менторинг' } })

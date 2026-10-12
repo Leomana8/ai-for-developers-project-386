@@ -1,37 +1,9 @@
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-vi.mock('@/lib/api', () => ({
-  api: { GET: vi.fn() },
-  getEventTypes: vi.fn(),
-  createEventType: vi.fn(),
-  getSlots: vi.fn(),
-  createMeeting: vi.fn(),
-  getMeetings: vi.fn(),
-  apiErrorMessage: vi.fn(() => 'Записаться сейчас нельзя, попробуйте позже'),
-  ApiError: class ApiError extends Error {
-    code: string
-    fields: Record<string, string>
-    constructor(envelope: {
-      error: { code: string; message: string; fields: Record<string, string> }
-    }) {
-      super(envelope.error.message)
-      this.code = envelope.error.code
-      this.fields = envelope.error.fields
-    }
-  },
-  API_UNAVAILABLE_MESSAGE: 'Записаться сейчас нельзя, попробуйте позже',
-}))
-
-import { getEventTypes } from '@/lib/api'
 import { EventTypesPage } from '@/pages/booking/EventTypesPage'
-
-const getEventTypesMock = vi.mocked(getEventTypes)
-
-beforeEach(() => {
-  getEventTypesMock.mockReset()
-})
+import { mockApi } from '@/test/mockApi'
 
 function renderTypes() {
   return render(
@@ -43,10 +15,13 @@ function renderTypes() {
 
 describe('EventTypesPage', () => {
   it('показывает Типы событий со ссылками на календарь', async () => {
-    getEventTypesMock.mockResolvedValue([
-      { id: 'e1', name: 'Знакомство', description: 'Короткий созвон', duration: 15 },
-      { id: 'e2', name: 'Менторинг', description: null, duration: 60 },
-    ])
+    mockApi({
+      'GET /api/event-types': () =>
+        Response.json([
+          { id: 'e1', name: 'Знакомство', description: 'Короткий созвон', duration: 15 },
+          { id: 'e2', name: 'Менторинг', description: null, duration: 60 },
+        ]),
+    })
     renderTypes()
 
     expect(screen.getByText('Выберите тип события — и подходящее время.')).toBeInTheDocument()
@@ -56,14 +31,18 @@ describe('EventTypesPage', () => {
   })
 
   it('пустой список → «Пока нет доступных типов»', async () => {
-    getEventTypesMock.mockResolvedValue([])
+    mockApi({ 'GET /api/event-types': () => Response.json([]) })
     renderTypes()
 
     expect(await screen.findByText('Пока нет доступных типов')).toBeInTheDocument()
   })
 
   it('ошибка API → понятное сообщение', async () => {
-    getEventTypesMock.mockRejectedValue(new TypeError('fetch failed'))
+    mockApi({
+      'GET /api/event-types': () => {
+        throw new TypeError('fetch failed')
+      },
+    })
     renderTypes()
 
     expect(

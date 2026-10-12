@@ -1,34 +1,17 @@
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter, useRoutes } from 'react-router-dom'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { routes } from '@/router'
+import { mockApi } from '@/test/mockApi'
 
-// Страницы ходят в /api при маунте — подменяем слой данных.
-vi.mock('@/lib/api', () => ({
-  api: { GET: vi.fn() },
-  getEventTypes: vi.fn().mockResolvedValue([]),
-  createEventType: vi.fn(),
-  getSlots: vi
-    .fn()
-    .mockResolvedValue({ eventTypeId: 'e1', window: { from: '', to: '' }, days: [] }),
-  createMeeting: vi.fn(),
-  getMeetings: vi.fn().mockResolvedValue([]),
-  apiErrorMessage: vi.fn(() => 'Записаться сейчас нельзя, попробуйте позже'),
-  ApiError: class ApiError extends Error {
-    code: string
-    fields: Record<string, string>
-    constructor(envelope: {
-      error: { code: string; message: string; fields: Record<string, string> }
-    }) {
-      super(envelope.error.message)
-      this.code = envelope.error.code
-      this.fields = envelope.error.fields
-    }
-  },
-  API_UNAVAILABLE_MESSAGE: 'Записаться сейчас нельзя, попробуйте позже',
-  ADMIN_UNAVAILABLE_MESSAGE: 'Сервер недоступен, попробуйте позже',
-}))
+// Страницы ходят в /api при маунте — по умолчанию отвечаем пустыми списками.
+beforeEach(() => {
+  mockApi({
+    'GET /api/event-types': () => Response.json([]),
+    'GET /api/meetings': () => Response.json([]),
+  })
+})
 
 function Routes() {
   return useRoutes(routes)
