@@ -17,7 +17,7 @@ export function slotsRouter(store: Store): Router {
   const list: RequestHandler<Record<string, string>, Availability | ErrorEnvelope> = (req, res) => {
     const eventType = store.eventTypes.get(req.params.id)
     if (!eventType) {
-      res.status(404).json(notFoundEnvelope('Event type not found'))
+      res.status(404).json(notFoundEnvelope('Тип события не найден'))
       return
     }
 

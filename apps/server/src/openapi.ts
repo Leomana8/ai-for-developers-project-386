@@ -80,18 +80,24 @@ export const validationErrorHandler: ErrorRequestHandler<Record<string, string>,
     const fields: Record<string, string> = {}
     for (const issue of err.errors) {
       const key = fieldKey(issue.path)
+      // Тексты полей валидатора — технический fallback для запросов в обход UI
+      // (канон §5 показывает клиент), поэтому остаются английскими.
       const message = issue.message ?? 'Invalid value'
       fields[key] = key in fields ? `${fields[key]}; ${message}` : message
     }
-    const message = err.errors[0]?.message ?? 'Request validation failed'
-    res.status(422).json(errorEnvelope('validation_error', message, fields))
+    // Канон message конверта — docs/spec.md §6.
+    res
+      .status(422)
+      .json(errorEnvelope('validation_error', 'Проверьте правильность заполнения полей', fields))
     return
   }
 
   if (isBodyParseFailure(err)) {
     res
       .status(422)
-      .json(errorEnvelope('validation_error', 'Malformed JSON body', { body: 'invalid JSON' }))
+      .json(
+        errorEnvelope('validation_error', 'Некорректное тело запроса', { body: 'invalid JSON' }),
+      )
     return
   }
 

@@ -28,7 +28,8 @@ export function eventTypesRouter(store: Store): Router {
     // «Кратно 15» в OpenAPI не выражается — дополняем валидатор серверной проверкой.
     if (req.body.duration % 15 !== 0) {
       res.status(422).json(
-        errorEnvelope('validation_error', 'Invalid request', {
+        // Канон message конверта — docs/spec.md §6.
+        errorEnvelope('validation_error', 'Проверьте правильность заполнения полей', {
           duration: 'Длительность — кратна 15, от 15 до 90 минут',
         }),
       )

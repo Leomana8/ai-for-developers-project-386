@@ -41,7 +41,7 @@ export function meetingsRouter(store: Store): Router {
   ) => {
     const eventType = store.eventTypes.get(req.body.eventTypeId)
     if (!eventType) {
-      res.status(404).json(notFoundEnvelope('Event type not found'))
+      res.status(404).json(notFoundEnvelope('Тип события не найден'))
       return
     }
 
@@ -49,16 +49,19 @@ export function meetingsRouter(store: Store): Router {
     const guestName = req.body.guestName.trim()
     const guestEmail = req.body.guestEmail.trim().toLowerCase()
     if (guestName === '') {
-      res
-        .status(422)
-        .json(errorEnvelope('validation_error', 'Invalid request', { guestName: 'Укажите имя' }))
+      res.status(422).json(
+        // Канон message конверта — docs/spec.md §6.
+        errorEnvelope('validation_error', 'Проверьте правильность заполнения полей', {
+          guestName: 'Укажите имя',
+        }),
+      )
       return
     }
 
     const start = parseStart(req.body.start)
     if (start === null || !isGridMark(start)) {
       res.status(422).json(
-        errorEnvelope('validation_error', 'Invalid request', {
+        errorEnvelope('validation_error', 'Проверьте правильность заполнения полей', {
           start: 'Выберите время из предложенных Слотов',
         }),
       )
@@ -68,7 +71,7 @@ export function meetingsRouter(store: Store): Router {
     const timeError = bookingStartError(start, eventType.duration, new Date())
     if (timeError !== null) {
       res.status(422).json(
-        errorEnvelope(timeError, 'Slot is outside the booking window', {
+        errorEnvelope(timeError, 'Этот слот вне окна записи', {
           start: 'Слот вне окна записи или рабочего времени (09:00–18:00)',
         }),
       )
@@ -78,7 +81,7 @@ export function meetingsRouter(store: Store): Router {
     // Гонка на один Слот разрешается 409 (docs/spec.md §5 «Запись»).
     const end = new Date(start.getTime() + eventType.duration * 60_000)
     if (isOccupied(store.meetings.list(), start, end)) {
-      res.status(409).json(errorEnvelope('slot_taken', 'Slot is no longer available'))
+      res.status(409).json(errorEnvelope('slot_taken', 'Слот больше недоступен'))
       return
     }
 
