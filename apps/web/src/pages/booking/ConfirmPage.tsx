@@ -8,7 +8,7 @@ import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { useEventType } from '@/hooks/useEventType'
 import { ApiError, apiErrorMessage, createMeeting } from '@/lib/api'
-import { formatDayTime } from '@/lib/datetime'
+import { formatDayTime, isValidDateTime } from '@/lib/datetime'
 
 // Отдельного статуса «ошибка» нет: любой сбой уже показан через slotStatus,
 // fieldErrors или errorMessage, и четвёртое состояние было бы мёртвым.
@@ -47,7 +47,9 @@ export function ConfirmPage() {
     return errors
   }
 
-  if (!eventTypeId || start === null) {
+  // Невалидный start= из URL — как его отсутствие: format() date-fns бросает
+  // RangeError на Invalid Date, и без этой проверки падает всё приложение.
+  if (!eventTypeId || start === null || !isValidDateTime(start)) {
     return <Navigate to="/book" replace />
   }
 
