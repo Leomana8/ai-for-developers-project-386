@@ -37,6 +37,17 @@ export function openApiValidator() {
 
 type ValidatorIssue = { path?: string; message?: string }
 
+// JSON Pointer валидатора ('/body/guestName') → имя поля запроса ('guestName'):
+// ключи полей в ErrorEnvelope должны совпадать с ключами тела (спека §5 —
+// «422 со списком полей»), иначе клиент не сопоставит их с формами.
+// Указатели вне тела ('/start') нормализуем без ведущего слэша, пустой — 'request'.
+function fieldKey(issuePath: string | undefined): string {
+  if (issuePath === undefined || issuePath === '') return 'request'
+  const parts = issuePath.split('/').filter(Boolean)
+  if (parts[0] === 'body') return parts.slice(1).join('.') || 'body'
+  return parts.join('.')
+}
+
 function isValidatorFailure(err: unknown): err is { status: number; errors: ValidatorIssue[] } {
   return (
     typeof err === 'object' &&
@@ -68,19 +79,25 @@ export const validationErrorHandler: ErrorRequestHandler<Record<string, string>,
   if (isValidatorFailure(err) && err.status < 500) {
     const fields: Record<string, string> = {}
     for (const issue of err.errors) {
-      const key = issue.path ?? 'request'
+      const key = fieldKey(issue.path)
+      // Тексты полей валидатора — технический fallback для запросов в обход UI
+      // (канон §5 показывает клиент), поэтому остаются английскими.
       const message = issue.message ?? 'Invalid value'
       fields[key] = key in fields ? `${fields[key]}; ${message}` : message
     }
-    const message = err.errors[0]?.message ?? 'Request validation failed'
-    res.status(422).json(errorEnvelope('validation_error', message, fields))
+    // Канон message конверта — docs/spec.md §6.
+    res
+      .status(422)
+      .json(errorEnvelope('validation_error', 'Проверьте правильность заполнения полей', fields))
     return
   }
 
   if (isBodyParseFailure(err)) {
     res
       .status(422)
-      .json(errorEnvelope('validation_error', 'Malformed JSON body', { body: 'invalid JSON' }))
+      .json(
+        errorEnvelope('validation_error', 'Некорректное тело запроса', { body: 'invalid JSON' }),
+      )
     return
   }
 

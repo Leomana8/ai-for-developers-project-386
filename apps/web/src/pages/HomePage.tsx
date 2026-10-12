@@ -1,35 +1,40 @@
 import { Link } from 'react-router-dom'
 
+import { SiteHeader } from '@/components/SiteHeader'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 const steps = [
   {
-    title: 'Открываем время',
-    description: 'Владелец календаря публикует свободные слоты времени.',
+    title: 'Владелец открывает время',
+    description: 'Свободные Слоты публикуются в календаре — видно, что доступно.',
   },
   {
-    title: 'Выбираете слот',
-    description: 'Одно нажатие — и время за вами.',
+    title: 'Гость выбирает Слот',
+    description: 'Один клик по подходящему времени — и Слот ваш.',
   },
   {
-    title: 'Встреча забронирована',
-    description: 'Больше ничего не нужно уточнять и согласовывать.',
+    title: 'Встреча назначена',
+    description: 'Остаётся только позвонить: ничего уточнять не нужно.',
   },
 ]
 
 export function HomePage() {
   return (
     <div className="mx-auto flex min-h-svh w-full max-w-3xl flex-col gap-16 px-6 py-16">
+      <SiteHeader section="book" />
+
       <header className="flex flex-col items-start gap-4">
+        <Badge variant="secondary">Запись без авторизации</Badge>
         <h1 className="font-heading text-4xl font-semibold tracking-tight sm:text-5xl">
           Звонок без переписки и согласований
         </h1>
         <p className="max-w-xl text-lg text-muted-foreground">
-          Свободное время как на ладони: выбирайте слот и бронируйте в один клик.
+          Свободное время видно сразу: выберите Слот и запишитесь на звонок в пару кликов.
         </p>
         <Button asChild size="lg">
-          <Link to="/book">Записаться на звонок</Link>
+          <Link to="/book">Записаться</Link>
         </Button>
       </header>
 

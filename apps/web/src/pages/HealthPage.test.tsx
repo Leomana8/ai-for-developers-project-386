@@ -1,32 +1,34 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
-import { api } from '@/lib/api'
 import { HealthPage } from '@/pages/HealthPage'
-
-vi.mock('@/lib/api', () => ({
-  api: { GET: vi.fn() },
-}))
-
-const getMock = vi.mocked(api.GET)
-
-beforeEach(() => {
-  getMock.mockReset()
-})
+import { mockApi } from '@/test/mockApi'
 
 describe('HealthPage', () => {
+  it('служебная страница — без хедера вкладок', () => {
+    render(<HealthPage />)
+
+    expect(screen.queryByRole('tablist')).not.toBeInTheDocument()
+  })
+
   it('запрашивает /api/health и показывает «Сервер отвечает ✓»', async () => {
-    getMock.mockResolvedValue({ data: { status: 'ok' } })
+    const health = vi.fn((_request: Request) => Response.json({ status: 'ok' }))
+    mockApi({ 'GET /api/health': health })
 
     render(<HealthPage />)
     fireEvent.click(screen.getByRole('button', { name: 'Проверить /api/health' }))
 
-    expect(getMock).toHaveBeenCalledWith('/api/health')
+    const [request] = health.mock.calls[0]
+    expect(new URL(request.url).pathname).toBe('/api/health')
     expect(await screen.findByText('Сервер отвечает ✓')).toBeInTheDocument()
   })
 
   it('показывает «Сервер недоступен ✗» при ошибке запроса', async () => {
-    getMock.mockRejectedValue(new Error('network'))
+    mockApi({
+      'GET /api/health': () => {
+        throw new TypeError('fetch failed')
+      },
+    })
 
     render(<HealthPage />)
     fireEvent.click(screen.getByRole('button', { name: 'Проверить /api/health' }))

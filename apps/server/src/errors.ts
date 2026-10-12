@@ -12,6 +12,6 @@ export function errorEnvelope(
   return { error: { code, message, fields } }
 }
 
-export function notFoundEnvelope(message = 'Resource not found'): ErrorEnvelope {
+export function notFoundEnvelope(message = 'Маршрут не найден'): ErrorEnvelope {
   return errorEnvelope('not_found', message)
 }
