@@ -1,4 +1,7 @@
 import type { Server } from 'node:http'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
@@ -468,6 +471,59 @@ describe('meetings', () => {
 
     for (const payload of [blankPayload, badEmailPayload]) {
       expect(Object.keys(payload.error.fields).some((key) => key.startsWith('/'))).toBe(false)
+    }
+  })
+})
+
+describe('static web app (production)', () => {
+  let web: RunningServer
+  let distDir: string
+
+  beforeAll(async () => {
+    distDir = fs.mkdtempSync(path.join(os.tmpdir(), 'web-dist-'))
+    fs.writeFileSync(path.join(distDir, 'index.html'), '<html><body>SPA</body></html>')
+    fs.mkdirSync(path.join(distDir, 'assets'))
+    fs.writeFileSync(path.join(distDir, 'assets', 'app.js'), 'console.log(1)')
+    web = await listenOnRandomPort(createApp({ webDist: distDir }))
+  })
+
+  afterAll(async () => {
+    await closeServer(web.server)
+    fs.rmSync(distDir, { recursive: true, force: true })
+  })
+
+  it('GET / serves the built SPA index.html', async () => {
+    const response = await fetch(`${web.baseUrl}/`)
+    expect(response.status).toBe(200)
+    expect(await response.text()).toContain('<body>SPA</body>')
+  })
+
+  it('GET /assets/app.js serves static files from dist', async () => {
+    const response = await fetch(`${web.baseUrl}/assets/app.js`)
+    expect(response.status).toBe(200)
+    expect(await response.text()).toBe('console.log(1)')
+  })
+
+  it('GET /meetings (SPA route) falls back to index.html', async () => {
+    const response = await fetch(`${web.baseUrl}/meetings`)
+    expect(response.status).toBe(200)
+    expect(await response.text()).toContain('<body>SPA</body>')
+  })
+
+  it('GET /api/no-such-route still responds 404 with an error envelope', async () => {
+    const response = await fetch(`${web.baseUrl}/api/no-such-route`)
+    expect(response.status).toBe(404)
+    const payload = await response.json()
+    expect(payload.error.code).toBe('not_found')
+  })
+
+  it('createApp({ webDist: false }) does not serve the SPA', async () => {
+    const noWeb = await listenOnRandomPort(createApp({ webDist: false }))
+    try {
+      const response = await fetch(`${noWeb.baseUrl}/`)
+      expect(response.status).toBe(404)
+    } finally {
+      await closeServer(noWeb.server)
     }
   })
 })
