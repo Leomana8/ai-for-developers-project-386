@@ -17,9 +17,10 @@ coverage/
 Thumbs.db
 .DS_Store
 
-# OpenCode: локальный конфиг игнорируем, проектные команды — коммитим
+# OpenCode: локальный конфиг игнорируем, проектные команды и скиллы — коммитим
 .opencode/*
 !.opencode/commands/
+!.opencode/skills/
 
 # Env
 .env
