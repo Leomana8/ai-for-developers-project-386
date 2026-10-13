@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.1.1](https://github.com/Leomana8/ai-for-developers-project-386/compare/v1.1.0...v1.1.1) (2026-10-13)
+
+
+### Bug Fixes
+
+* **web:** календарь выбора Слота на русском ([14016b9](https://github.com/Leomana8/ai-for-developers-project-386/commit/14016b9d65781c653aefb760d96fc3b2207a50b3)), closes [#37](https://github.com/Leomana8/ai-for-developers-project-386/issues/37)
+* **web:** невалидный start= в URL не роняет подтверждение ([bb9ff0c](https://github.com/Leomana8/ai-for-developers-project-386/commit/bb9ff0cd225559fe18614a9771961be2eea0a427))
+* **web:** невалидный start= в URL не роняет подтверждение ([fcd1573](https://github.com/Leomana8/ai-for-developers-project-386/commit/fcd15732eb2b27feea4b408bfe3023be92182ed3)), closes [#35](https://github.com/Leomana8/ai-for-developers-project-386/issues/35)
+* **web:** невалидный start= в URL не роняет подтверждение ([406b4f9](https://github.com/Leomana8/ai-for-developers-project-386/commit/406b4f935562f82e62c0d94916bb09a9e590d7cf)), closes [#35](https://github.com/Leomana8/ai-for-developers-project-386/issues/35)
+
 ## [1.1.0](https://github.com/Leomana8/ai-for-developers-project-386/compare/v1.0.0...v1.1.0) (2026-10-12)
 
 
