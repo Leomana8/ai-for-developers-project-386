@@ -1,0 +1,14 @@
+# В контекст сборки не отдаём локальные артефакты — в образе всё пересобирается
+# стадией build (npm ci + npm run build).
+node_modules
+**/node_modules
+**/dist
+.git
+.github
+.opencode
+.playwright-mcp
+docs
+coverage
+*.log
+.DS_Store
+Thumbs.db

@@ -2,6 +2,8 @@
 
 [![hexlet-check](https://github.com/Leomana8/ai-for-developers-project-386/actions/workflows/hexlet-check.yml/badge.svg)](https://github.com/Leomana8/ai-for-developers-project-386/actions)
 
+🌐 Опубликованная версия: **https://call-calendar-zt5b.onrender.com**
+
 Разработайте совместно с ИИ сервис для бронирования календаря
 
 Учебный проект Хекслета: https://ru.hexlet.io/programs/ai-for-developers
@@ -53,6 +55,25 @@ npm run spec
 ```
 
 Сгенерированный файл коммитится; CI проверяет его актуальность (`npm run spec:check`).
+
+## Деплой
+
+Приложение развёрнуто на Render: **https://call-calendar-zt5b.onrender.com** —
+сервер отдаёт и API, и собранный фронтенд одним контейнером. План бесплатный,
+поэтому сервис засыпает без запросов, и первый запуск может занять до минуты.
+
+Образ собирается из `Dockerfile` в корне репозитория: стадия сборки ставит
+зависимости и собирает бэкенд и фронтенд, рантайм-стадия содержит только
+прод-зависимости и артефакты сборки. Порт приложение берёт из переменной
+окружения `PORT` — он же используется при деплое и в автоматической проверке.
+
+Локально тот же образ запускается так:
+
+```bash
+docker build -t call-calendar .
+docker run --rm -p 8080:8080 -e PORT=8080 call-calendar
+# приложение доступно на http://localhost:8080, /api/health — проверка живости
+```
 
 ## Структура проекта
 
