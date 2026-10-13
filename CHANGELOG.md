@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.2.0](https://github.com/Leomana8/ai-for-developers-project-386/compare/v1.1.1...v1.2.0) (2026-10-13)
+
+
+### Features
+
+* **deploy:** один Docker-образ отдаёт API и собранный фронтенд ([0ec749c](https://github.com/Leomana8/ai-for-developers-project-386/commit/0ec749c4013febb3f1c4bbcbdc0cb8cbfe562f8b))
+* **server:** отдавать собранный фронтенд в production ([8dbc451](https://github.com/Leomana8/ai-for-developers-project-386/commit/8dbc4512252a216bd8eb00d2b4f2839e13ce7ee3))
+
+
+### Bug Fixes
+
+* **server:** не отдавать прошедшие Слоты сегодняшнего дня ([b1e5368](https://github.com/Leomana8/ai-for-developers-project-386/commit/b1e5368702b6e1742f84a7a3c1ec077828ab623c))
+* **server:** не отдавать прошедшие Слоты сегодняшнего дня ([2b155d7](https://github.com/Leomana8/ai-for-developers-project-386/commit/2b155d79e5b8b7cbcd855efe13d7613a04017e39)), closes [#41](https://github.com/Leomana8/ai-for-developers-project-386/issues/41)
+
 ## [1.1.1](https://github.com/Leomana8/ai-for-developers-project-386/compare/v1.1.0...v1.1.1) (2026-10-13)
 
 
