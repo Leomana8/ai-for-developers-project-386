@@ -82,7 +82,8 @@ export function bookingStartError(
 // Доступность по спеке §5: окно записи [сегодня … сегодня+13], единая сетка
 // 15 минут, рабочее окно дня 09:00–18:00. Слот занимает duration/15 ячеек и
 // не предлагается, если выходит за конец рабочего окна. Занятость общая для
-// всех Типов событий; прошедшие часы сегодняшнего дня недоступны.
+// всех Типов событий; прошедшие Слоты сегодняшнего дня не возвращаются вовсе,
+// поэтому available говорит только о занятости.
 export function availability(
   eventTypeId: string,
   durationMinutes: number,
@@ -102,8 +103,12 @@ export function availability(
       startMinutes += GRID_MINUTES
     ) {
       const start = atMinutes(day, startMinutes)
+      // Прошедшие Слоты пропускаем, а не отдаём с available: false — в сетке
+      // Гостя иначе видно время, в которое записаться уже нельзя. Проверка
+      // «старт в будущем» на POST /api/meetings остаётся в bookingStartError.
+      if (start.getTime() <= now.getTime()) continue
       const end = atMinutes(day, startMinutes + durationMinutes)
-      const available = start.getTime() > now.getTime() && !isOccupied(meetings, start, end)
+      const available = !isOccupied(meetings, start, end)
       slots.push({ start: formatIso(start), end: formatIso(end), available })
     }
 
