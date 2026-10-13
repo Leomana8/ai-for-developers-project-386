@@ -242,6 +242,9 @@ describe('createApp({ seed: true })', () => {
     expect(slots.window).toEqual({ from: isoDate(0), to: isoDate(13) })
     expect(slots.days).toHaveLength(14)
     for (const day of slots.days) {
+      // Сегодняшний день короче: прошедшие Слоты не возвращаются (§5), поэтому
+      // полную сетку проверяем на остальных 13 днях.
+      if (day.date === isoDate(0)) continue
       // 60 минут в окне 09:00–18:00: старты 09:00…17:00 → 33 слота в день.
       expect(day.slots).toHaveLength(33)
       expect(day.slots[0]?.start).toBe(`${day.date}T09:00:00`)
@@ -263,12 +266,13 @@ describe('createApp({ seed: true })', () => {
     ).json()) as components['schemas']['Availability']
     const today = slots.days.find((day) => day.date === isoDate(0))!
 
+    // Прошедшие Слоты не возвращаются вовсе, а не приходят с available: false.
     const now = new Date().getTime()
     for (const slot of today.slots) {
-      if (new Date(slot.start).getTime() <= now) {
-        expect(slot.available).toBe(false)
-      }
+      expect(new Date(slot.start).getTime()).toBeGreaterThan(now)
     }
+    // Сид ставит Встречи только с завтра, поэтому оставшиеся Слоты дня свободны.
+    expect(today.slots.every((slot) => slot.available)).toBe(true)
   })
 
   it('GET /api/meetings returns seeded upcoming meetings sorted by start', async () => {
