@@ -33,12 +33,21 @@ Vite + React + shadcn/ui (фронтенд), Express 5 (бэкенд). Моно�
 ## Правила
 
 - **Conventional Commits** для всех коммитов (`feat:`, `fix:`, `chore:`, `refactor:` и т.д.) — по ним release-please собирает релизы. Тип в скобках по приложению: `feat(web): ...`, `fix(server): ...`.
+- **Сообщение коммита ссылается на тикет.** Тело коммита — что изменилось и почему; последней строкой ссылка на issue: `Closes #28` (тикет закрывается этим коммитом) или `Часть тикета #28` (работа не закончена). Без ссылки коммит не считается связанным с постановкой задачи. Заводить тикет — до правки кода, не после.
 - После изменений прогонять `npm run lint`, `npm test`, `npm run build` — в CI то же самое (`.github/workflows/ci.yml`).
 - Файл `.github/workflows/hexlet-check.yml` не менять.
 - Новый код — только TypeScript. Форматирование — Prettier, не настраивать ESLint (используется oxlint).
 - Тесты: Vitest. Дымовой тест сервера в `apps/server/src/app.test.ts` — новый эндпоинт стоит начать с теста в том же стиле.
 
 ## Agent skills
+
+### Конфигурация агента
+
+`.opencode/opencode.jsonc` лежит в репозитории: правила доступа (`permissions`) и
+MCP-серверы проекта — `playwright`, `chrome-devtools` (локальные, без секретов) и `render`
+(удалённый). Токен Render в репозиторий не попадает: он берётся из переменной окружения
+`RENDER_API_TOKEN` через подстановку `{env:RENDER_API_TOKEN}`. Локальные артефакты в
+`.opencode/*` (кроме `opencode.jsonc`, `commands/`, `skills/`) игнорируются — см. `.gitignore`.
 
 ### Issue tracker
 

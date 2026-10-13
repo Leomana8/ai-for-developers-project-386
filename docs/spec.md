@@ -90,7 +90,10 @@
   14-й день включается целиком.
 - **Рабочее окно дня** — 09:00–18:00, фиксированная константа сервера; Владелец его
   не задаёт.
-- **Сетка** — единая, шаг 15 минут. Шаг старта брони — 15 минут.
+- **Сетка** — единая, шаг 15 минут. Шаг старта брони — 15 минут. Обоснование: длительность
+  Типа события любая, кратная 15 (§5 «Тип события»), поэтому сетка в 30 минут не смогла бы
+  предложить Слот типам короче 30 минут. Общая сетка 15 минут покрывает весь диапазон 15–90
+  и остаётся единой для всех Типов событий — занятость считается в ячейках, а не во времени.
 - Слот стартует в отметке `t` и занимает `duration/15` подряд идущих ячеек.
 - Слот, выходящий за конец рабочего окна, **не предлагается**.
 
@@ -336,12 +339,20 @@ idle | submitting | error`; `409` → сообщение и возврат в к
 
 ## Критерии готовности`.
 
-| Тикет                                                                                                                        | Разделы спеки |
-| ---------------------------------------------------------------------------------------------------------------------------- | ------------- |
-| [#23](https://github.com/Leomana8/ai-for-developers-project-386/issues/23) `feat(server): хранилище и Типы событий`          | §5, §6        |
-| [#24](https://github.com/Leomana8/ai-for-developers-project-386/issues/24) `feat(server): доступность Слотов в окне 14 дней` | §5, §6        |
-| [#25](https://github.com/Leomana8/ai-for-developers-project-386/issues/25) `feat(server): Записи и предстоящие Встречи`      | §5, §6        |
-| [#26](https://github.com/Leomana8/ai-for-developers-project-386/issues/26) `feat(web): слой данных и компоненты`             | §6, §7        |
-| [#27](https://github.com/Leomana8/ai-for-developers-project-386/issues/27) `feat(web): главная и список Типов событий`       | §7            |
-| [#28](https://github.com/Leomana8/ai-for-developers-project-386/issues/28) `feat(web): гостевой поток записи`                | §7, §8        |
-| [#29](https://github.com/Leomana8/ai-for-developers-project-386/issues/29) `feat(web): Админка`                              | §7            |
+| Тикет                                                                                                                         | Разделы спеки | Реализация                                                                         |
+| ----------------------------------------------------------------------------------------------------------------------------- | ------------- | ---------------------------------------------------------------------------------- |
+| [#23](https://github.com/Leomana8/ai-for-developers-project-386/issues/23) `feat(server): хранилище и Типы событий`           | §5, §6        | [#38](https://github.com/Leomana8/ai-for-developers-project-386/pull/38) `0a82ae1` |
+| [#24](https://github.com/Leomana8/ai-for-developers-project-386/issues/24) `feat(server): доступность Слотов в окне 14 дней`  | §5, §6        | [#38](https://github.com/Leomana8/ai-for-developers-project-386/pull/38) `bc89d60` |
+| [#25](https://github.com/Leomana8/ai-for-developers-project-386/issues/25) `feat(server): Записи и предстоящие Встречи`       | §5, §6        | [#38](https://github.com/Leomana8/ai-for-developers-project-386/pull/38) `a422f26` |
+| [#26](https://github.com/Leomana8/ai-for-developers-project-386/issues/26) `feat(web): слой данных и компоненты`              | §6, §7        | [#38](https://github.com/Leomana8/ai-for-developers-project-386/pull/38) `c0ad33a` |
+| [#27](https://github.com/Leomana8/ai-for-developers-project-386/issues/27) `feat(web): главная и список Типов событий`        | §7            | [#38](https://github.com/Leomana8/ai-for-developers-project-386/pull/38) `386618a` |
+| [#28](https://github.com/Leomana8/ai-for-developers-project-386/issues/28) `feat(web): гостевой поток записи`                 | §7, §8        | [#38](https://github.com/Leomana8/ai-for-developers-project-386/pull/38) `ae67263` |
+| [#29](https://github.com/Leomana8/ai-for-developers-project-386/issues/29) `feat(web): Админка`                               | §7            | [#38](https://github.com/Leomana8/ai-for-developers-project-386/pull/38) `fd2517b` |
+| [#33](https://github.com/Leomana8/ai-for-developers-project-386/issues/33) `feat(web): вкладки «Запись»/«Админка» на главной` | §7            | [#38](https://github.com/Leomana8/ai-for-developers-project-386/pull/38) `d9f6d75` |
+| [#34](https://github.com/Leomana8/ai-for-developers-project-386/issues/34) `feat(web): сквозной хедер и тексты экранов`       | §7, §10       | [#38](https://github.com/Leomana8/ai-for-developers-project-386/pull/38) `d24f3a1` |
+
+Спецификация #3 сложилась в PR [#22](https://github.com/Leomana8/ai-for-developers-project-386/pull/22),
+[#30](https://github.com/Leomana8/ai-for-developers-project-386/pull/30) и
+[#31](https://github.com/Leomana8/ai-for-developers-project-386/pull/31). Порядок работ задан
+нативными зависимостями между тикетами в GitHub: `#23` → `#24` → `#25` → `#26` → `#27` →
+`#28`/`#29`, `#33` → `#34`. Сообщения коммитов ссылаются на тикеты по правилу из `AGENTS.md`.

@@ -1,0 +1,101 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "permissions": [
+    // Инструменты без shell — без запросов: вопросы, скилы, субагенты,
+    // Code Mode (execute) и MCP-браузеры.
+    { "action": "question", "resource": "*", "effect": "allow" },
+    { "action": "skill", "resource": "*", "effect": "allow" },
+    { "action": "subagent", "resource": "*", "effect": "allow" },
+    { "action": "execute", "resource": "*", "effect": "allow" },
+    { "action": "chrome_devtools_*", "resource": "*", "effect": "allow" },
+    { "action": "playwright_*", "resource": "*", "effect": "allow" },
+
+    // Правки файлов проекта — без запроса (вне проекта спросит external_directory).
+    { "action": "edit", "resource": "*", "effect": "allow" },
+
+    // Любая shell-команда вне списка ниже — спрашивать (ask).
+    { "action": "shell", "resource": "*", "effect": "ask" },
+
+    // Безопасная инспекция git — без запроса.
+    { "action": "shell", "resource": "git status *", "effect": "allow" },
+    { "action": "shell", "resource": "git diff *", "effect": "allow" },
+    { "action": "shell", "resource": "git log *", "effect": "allow" },
+    { "action": "shell", "resource": "git branch *", "effect": "allow" },
+    { "action": "shell", "resource": "git remote *", "effect": "allow" },
+    { "action": "shell", "resource": "git show *", "effect": "allow" },
+
+    // Фиксация изменений (локально; удалённый репозиторий остаётся под deny).
+    { "action": "shell", "resource": "git add *", "effect": "allow" },
+    { "action": "shell", "resource": "git commit *", "effect": "allow" },
+
+    // Скрипты проекта из AGENTS.md — без запроса.
+    { "action": "shell", "resource": "npm run dev *", "effect": "allow" },
+    { "action": "shell", "resource": "npm test *", "effect": "allow" },
+    { "action": "shell", "resource": "npm run test *", "effect": "allow" },
+    { "action": "shell", "resource": "npm run lint *", "effect": "allow" },
+    { "action": "shell", "resource": "npm run format *", "effect": "allow" },
+    { "action": "shell", "resource": "npm run format:check *", "effect": "allow" },
+    { "action": "shell", "resource": "npm run spec *", "effect": "allow" },
+    { "action": "shell", "resource": "npm run spec:generate *", "effect": "allow" },
+    { "action": "shell", "resource": "npm run spec:check *", "effect": "allow" },
+    { "action": "shell", "resource": "npm run spec:client *", "effect": "allow" },
+    { "action": "shell", "resource": "npm run spec:client:check *", "effect": "allow" },
+    { "action": "shell", "resource": "npm run spec:server *", "effect": "allow" },
+    { "action": "shell", "resource": "npm run spec:server:check *", "effect": "allow" },
+    { "action": "shell", "resource": "npm run build *", "effect": "allow" },
+    { "action": "shell", "resource": "npm run start *", "effect": "allow" },
+
+    // Установка зависимостей (из корня или -w в workspace).
+    { "action": "shell", "resource": "npm install *", "effect": "allow" },
+    { "action": "shell", "resource": "npm i *", "effect": "allow" },
+
+    // npx: форматирование, тесты, shadcn-компоненты.
+    { "action": "shell", "resource": "npx prettier *", "effect": "allow" },
+    { "action": "shell", "resource": "npx vitest *", "effect": "allow" },
+    { "action": "shell", "resource": "npx shadcn *", "effect": "allow" },
+
+    // GitHub CLI — issue tracker из AGENTS.md / docs/agents/issue-tracker.md.
+    { "action": "shell", "resource": "gh issue *", "effect": "allow" },
+    { "action": "shell", "resource": "gh pr *", "effect": "allow" },
+    { "action": "shell", "resource": "gh api *", "effect": "allow" },
+
+    // Опасные команды — жёсткий запрет (deny нельзя обойти «Allow always»).
+    { "action": "shell", "resource": "git push *", "effect": "deny" },
+    { "action": "shell", "resource": "git reset --hard *", "effect": "deny" },
+    { "action": "shell", "resource": "git clean *", "effect": "deny" },
+    { "action": "shell", "resource": "git branch -D *", "effect": "deny" },
+    { "action": "shell", "resource": "rm -rf *", "effect": "deny" },
+  ],
+
+  // MCP-серверы проекта. Конфиг в репозитории, чтобы агентная настройка была
+  // воспроизводима: клон + установка Node.js — и инструменты доступны.
+  // Секретов здесь нет: токен Render приходит из переменной окружения.
+  "mcp": {
+    // Браузер для скилла .opencode/skills/ui-testing (сценарии гостевого потока).
+    "playwright": {
+      "type": "local",
+      "command": ["npx", "-y", "@playwright/mcp@latest"],
+      "enabled": true,
+    },
+
+    // Второй браузерный доступ — для отладки вёрстки и сетевых запросов.
+    "chrome-devtools": {
+      "type": "local",
+      "command": ["npx", "-y", "chrome-devtools-mcp@latest"],
+      "enabled": true,
+    },
+
+    // Управление опубликованным сервисом (Render) — деплой, логи, редеплой.
+    // Токен НЕ хранится в репозитории: положите его в переменную окружения
+    // RENDER_API_TOKEN (PowerShell: $env:RENDER_API_TOKEN = "rnd_...").
+    "render": {
+      "type": "remote",
+      "url": "https://mcp.render.com/mcp",
+      "oauth": false,
+      "enabled": true,
+      "headers": {
+        "Authorization": "Bearer {env:RENDER_API_TOKEN}",
+      },
+    },
+  },
+}
