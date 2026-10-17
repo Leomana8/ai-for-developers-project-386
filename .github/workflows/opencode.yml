@@ -14,6 +14,10 @@ jobs:
       contains(github.event.comment.body, ' /opencode') ||
       startsWith(github.event.comment.body, '/opencode')
     runs-on: ubuntu-latest
+    # Страховка от зависания: экшен поднимает `opencode serve` без клиента, поэтому запрос
+    # подтверждения (ask) никто не снимет — без лимита GitHub убил бы job только через
+    # 360 минут. 15 минут хватает на установку и ответ модели.
+    timeout-minutes: 15
     permissions:
       id-token: write
       contents: read
