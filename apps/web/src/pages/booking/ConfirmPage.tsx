@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { useEventType } from '@/hooks/useEventType'
 import { ApiError, apiErrorMessage, createMeeting } from '@/lib/api'
 import { formatDayTime, isValidDateTime } from '@/lib/datetime'
+import { isValidEmail } from '@/lib/validation'
 
 // Отдельного статуса «ошибка» нет: любой сбой уже показан через slotStatus,
 // fieldErrors или errorMessage, и четвёртое состояние было бы мёртвым.
@@ -35,6 +36,8 @@ export function ConfirmPage() {
   const start = searchParams.get('start')
 
   // Клиентская валидация зеркалит правила сервера; тексты — канон §5 «Запись».
+  // Формат email берём из lib/validation, а не из своего regex: подсказка
+  // обязана отвергать ровно то же, что и `@format("email")` валидатора.
   function validate(): Record<string, string> {
     const errors: Record<string, string> = {}
     const name = guestName.trim()
@@ -43,7 +46,7 @@ export function ConfirmPage() {
     else if (name.length > 100) errors.guestName = 'Имя не длиннее 100 символов'
     if (email === '') errors.guestEmail = 'Укажите email'
     else if (email.length > 254) errors.guestEmail = 'Email не длиннее 254 символов'
-    else if (!/^[^\s@]+@[^\s@]+$/.test(email)) errors.guestEmail = 'Похоже, в email ошибка'
+    else if (!isValidEmail(email)) errors.guestEmail = 'Похоже, в email ошибка'
     return errors
   }
 

@@ -229,9 +229,37 @@ describe('гостевой поток записи', () => {
     expect(postMeeting).not.toHaveBeenCalled()
   })
 
+  // Регрессия #51: клиентский regex был мягче формата `email` из спеки, поэтому
+  // `фук@gse.tu` уходил на сервер и пользователь видел технический текст
+  // валидатора 'must match format "email"' вместо канона §5.
+  it.each([
+    ['кириллица в локальной части', 'фук@gse.tu'],
+    ['кириллица в домене', 'user@пример.рф'],
+    ['домен начинается с дефиса', 'user@-example.com'],
+  ])(
+    'клиентская валидация email: %s — «Похоже, в email ошибка», запрос не уходит',
+    async (_case, value) => {
+      const today = isoDay(0)
+      const postMeeting = vi.fn()
+      mockApi({
+        'GET /api/event-types': () => Response.json([eventType]),
+        'POST /api/meetings': postMeeting,
+      })
+
+      renderBooking(`/book/e1/confirm?start=${encodeURIComponent(`${today}T09:00:00`)}`)
+
+      fireEvent.input(await screen.findByLabelText('Имя'), { target: { value: 'Еврося ва' } })
+      fireEvent.input(screen.getByLabelText('Email'), { target: { value } })
+      fireEvent.click(screen.getByRole('button', { name: 'Записаться' }))
+
+      expect(await screen.findByText('Похоже, в email ошибка')).toBeInTheDocument()
+      expect(postMeeting).not.toHaveBeenCalled()
+    },
+  )
+
   it('422 → ошибки полей из конверта', async () => {
     // Подсказки клиентской валидации пройдены; сервер вернул ошибки полей —
-    // рендерим их как есть (тексты сервера — технический fallback, §5).
+    // UI показывает русские тексты полей конверта как есть (docs/spec.md §5).
     const today = isoDay(0)
     mockApi({
       'GET /api/event-types': () => Response.json([eventType]),
@@ -241,7 +269,7 @@ describe('гостевой поток записи', () => {
             error: {
               code: 'validation_error',
               message: 'Проверьте правильность заполнения полей',
-              fields: { guestEmail: 'must be a valid email' },
+              fields: { guestEmail: 'Похоже, в email ошибка' },
             },
           },
           { status: 422 },
@@ -254,7 +282,7 @@ describe('гостевой поток записи', () => {
     fireEvent.input(screen.getByLabelText('Email'), { target: { value: 'ivan@example.com' } })
     fireEvent.click(screen.getByRole('button', { name: 'Записаться' }))
 
-    expect(await screen.findByText('must be a valid email')).toBeInTheDocument()
+    expect(await screen.findByText('Похоже, в email ошибка')).toBeInTheDocument()
   })
 
   it('неизвестный тип события — «Тип события не найден» и возврат к списку', async () => {
