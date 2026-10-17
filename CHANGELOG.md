@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.1](https://github.com/Leomana8/ai-for-developers-project-386/compare/v1.2.0...v1.2.1) (2026-10-17)
+
+
+### Bug Fixes
+
+* **agent:** правила доступа в V1-формате — GitHub-экшен ставит OpenCode V1 ([2becdcc](https://github.com/Leomana8/ai-for-developers-project-386/commit/2becdccef931af5f6b4b57f596ef8d2f11112f3e))
+* **agent:** правила доступа в V1-формате — GitHub-экшен ставит OpenCode V1 ([ceb8311](https://github.com/Leomana8/ai-for-developers-project-386/commit/ceb83117deb6a49871ffbb2ed600721cc9b6c255))
+
 ## [1.2.0](https://github.com/Leomana8/ai-for-developers-project-386/compare/v1.1.1...v1.2.0) (2026-10-13)
 
 
