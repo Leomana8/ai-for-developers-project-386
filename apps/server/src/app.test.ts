@@ -477,6 +477,29 @@ describe('meetings', () => {
       expect(Object.keys(payload.error.fields).some((key) => key.startsWith('/'))).toBe(false)
     }
   })
+
+  // Регрессия #51: поля конверта UI показывает пользователю как есть, поэтому
+  // технические сообщения ajv ('must match format "email"') переводим в
+  // русский канон §5 «Запись».
+  it('responds 422 with Russian canon field texts for schema-level validation', async () => {
+    const cases: [Record<string, unknown>, string, string][] = [
+      [{ guestName: '' }, 'guestName', 'Укажите имя'],
+      [{ guestName: 'и'.repeat(101) }, 'guestName', 'Имя не длиннее 100 символов'],
+      [{ guestEmail: 'фук@gse.tu' }, 'guestEmail', 'Похоже, в email ошибка'],
+      [
+        { guestEmail: 'a'.repeat(250) + '@example.com' },
+        'guestEmail',
+        'Email не длиннее 254 символов',
+      ],
+    ]
+
+    for (const [override, field, text] of cases) {
+      const response = await postMeeting(override)
+      expect(response.status).toBe(422)
+      const payload = await response.json()
+      expect(payload.error.fields[field]).toBe(text)
+    }
+  })
 })
 
 describe('static web app (production)', () => {

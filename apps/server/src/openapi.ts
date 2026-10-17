@@ -35,7 +35,7 @@ export function openApiValidator() {
   })
 }
 
-type ValidatorIssue = { path?: string; message?: string }
+type ValidatorIssue = { path?: string; errorCode?: string }
 
 // JSON Pointer валидатора ('/body/guestName') → имя поля запроса ('guestName'):
 // ключи полей в ErrorEnvelope должны совпадать с ключами тела (спека §5 —
@@ -65,6 +65,44 @@ function isBodyParseFailure(err: unknown): boolean {
   )
 }
 
+// Ошибка поля ajv → русский текст канона §5. UI показывает поля конверта как
+// есть, поэтому технические сообщения ('must match format "email"') в интерфейс
+// попадать не должны. Ключ — имя поля запроса, значение — тексты по коду
+// правила валидатора; незаданная комбинация — общий текст (лучше, чем чужой язык).
+const FIELD_TEXTS: Record<string, Record<string, string>> = {
+  guestName: {
+    required: 'Укажите имя',
+    minLength: 'Укажите имя',
+    maxLength: 'Имя не длиннее 100 символов',
+  },
+  guestEmail: {
+    required: 'Укажите email',
+    format: 'Похоже, в email ошибка',
+    maxLength: 'Email не длиннее 254 символов',
+  },
+  name: {
+    required: 'Укажите название',
+    minLength: 'Укажите название',
+    maxLength: 'Название не длиннее 100 символов',
+  },
+  description: { maxLength: 'Описание не длиннее 500 символов' },
+  duration: {
+    required: 'Укажите длительность в минутах',
+    type: 'Укажите длительность в минутах',
+    minimum: 'Длительность — кратна 15, от 15 до 90 минут',
+    maximum: 'Длительность — кратна 15, от 15 до 90 минут',
+  },
+}
+
+const DEFAULT_FIELD_TEXT = 'Некорректное значение поля'
+
+// Код правила из errorCode ('maxLength.openapi.validation') — самого keyword
+// express-openapi-validator в ошибку не кладёт.
+function fieldMessage(field: string, errorCode: string | undefined): string {
+  const keyword = errorCode?.split('.')[0] ?? ''
+  return FIELD_TEXTS[field]?.[keyword] ?? DEFAULT_FIELD_TEXT
+}
+
 // Любая ошибка валидации запроса — это контрактный 422 с ErrorEnvelope
 // (код validation_error): в спеке нет 400/415, поэтому все клиентские
 // нарушения (тело, формат, content-type) маппим в один статус.
@@ -80,9 +118,7 @@ export const validationErrorHandler: ErrorRequestHandler<Record<string, string>,
     const fields: Record<string, string> = {}
     for (const issue of err.errors) {
       const key = fieldKey(issue.path)
-      // Тексты полей валидатора — технический fallback для запросов в обход UI
-      // (канон §5 показывает клиент), поэтому остаются английскими.
-      const message = issue.message ?? 'Invalid value'
+      const message = fieldMessage(key, issue.errorCode)
       fields[key] = key in fields ? `${fields[key]}; ${message}` : message
     }
     // Канон message конверта — docs/spec.md §6.
@@ -93,11 +129,11 @@ export const validationErrorHandler: ErrorRequestHandler<Record<string, string>,
   }
 
   if (isBodyParseFailure(err)) {
-    res
-      .status(422)
-      .json(
-        errorEnvelope('validation_error', 'Некорректное тело запроса', { body: 'invalid JSON' }),
-      )
+    res.status(422).json(
+      errorEnvelope('validation_error', 'Некорректное тело запроса', {
+        body: 'Некорректный JSON',
+      }),
+    )
     return
   }
 
