@@ -1,71 +1,112 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "permissions": [
+  // Правила записаны в V1-совместимом синтаксисе (объект `permission`), а не в V2-массиве
+  // `permissions`. GitHub-экшен ставит OpenCode V1 (`curl https://opencode.ai/install`) и
+  // падает на V2-ключе: «V2 permissions are not supported by OpenCode V1. Use V1 "permission"
+  // rules or run opencode2». Совместимость односторонняя: V2 нормализует V1-форму на лету
+  // (permission → permissions, bash → shell, task → subagent), V1 — нет. Поэтому файл
+  // остаётся в V1-форме, пока CI-бот работает на V1, и обслуживает обе версии сразу.
+  //
+  // Намеренно НЕТ верхнеуровневого catch-all "*". Неописанные действия и так разрешены
+  // дефолтами: в V2 базовая политика агента — "* → allow", в V1 почти всё allow. Явный
+  // "*": "ask" означал бы «спрашивать вообще всё, что не перечислено» и результат зависел бы
+  // от порядка слияния с глобальным конфигом разработчика. Для shell свой catch-all задан
+  // явно, в объекте `bash`.
+  //
+  // Политика внутри инструментов: «по умолчанию разрешено, опасное — deny». Промежуточный
+  // ask в CI не работает: GitHub-экшен поднимает `opencode serve` без клиента, который мог бы
+  // подтвердить запрос, и прогон ждёт вечно. Так и вышло в прогоне 39061963322: бот дошёл до
+  // `asking { permission: "bash", patterns: ["curl -s https://opencode.ai/config.json", ...] }`
+  // в 19:20:01 и стоял до ручной отмены на 11m30s. Поэтому ask здесь не используется, а роль
+  // ограничителя играет deny — его нельзя обойти кнопкой «Allow always».
+  "permission": {
     // Инструменты без shell — без запросов: вопросы, скилы, субагенты,
-    // Code Mode (execute) и MCP-браузеры.
-    { "action": "question", "resource": "*", "effect": "allow" },
-    { "action": "skill", "resource": "*", "effect": "allow" },
-    { "action": "subagent", "resource": "*", "effect": "allow" },
-    { "action": "execute", "resource": "*", "effect": "allow" },
-    { "action": "chrome_devtools_*", "resource": "*", "effect": "allow" },
-    { "action": "playwright_*", "resource": "*", "effect": "allow" },
+    // Code Mode (execute) и MCP-браузеры. Ключи `execute` и `<server>_*` относятся
+    // к V2 (Code Mode, MCP-инструменты как `<server>_<tool>`); в V1 они инертны, но и
+    // не мешают — там MCP-тулы и так разрешены по умолчанию.
+    "question": "allow",
+    "skill": "allow",
+    "task": "allow",
+    "execute": "allow",
+    "chrome_devtools_*": "allow",
+    "playwright_*": "allow",
 
-    // Правки файлов проекта — без запроса (вне проекта спросит external_directory).
-    { "action": "edit", "resource": "*", "effect": "allow" },
+    // Правки файлов проекта — без запроса, выход за пределы проекта — запрет.
+    // Правило явное, потому что дефолты расходятся: в V1 external_directory спрашивает,
+    // в V2 — разрешает, и без правила правки вне репозитория проходили бы молча. Здесь
+    // именно deny, а не ask: в headless-прогоне вопрос подтвердить некому (см. выше).
+    "edit": "allow",
+    "external_directory": "deny",
 
-    // Любая shell-команда вне списка ниже — спрашивать (ask).
-    { "action": "shell", "resource": "*", "effect": "ask" },
+    // Любая shell-команда вне списка ниже — разрешена (allow), опасное запрещено в конце
+    // списка (deny). Внутри одного инструмента действует «последнее совпадение побеждает»:
+    // catch-all первым, deny — последними.
+    "bash": {
+      "*": "allow",
 
-    // Безопасная инспекция git — без запроса.
-    { "action": "shell", "resource": "git status *", "effect": "allow" },
-    { "action": "shell", "resource": "git diff *", "effect": "allow" },
-    { "action": "shell", "resource": "git log *", "effect": "allow" },
-    { "action": "shell", "resource": "git branch *", "effect": "allow" },
-    { "action": "shell", "resource": "git remote *", "effect": "allow" },
-    { "action": "shell", "resource": "git show *", "effect": "allow" },
+      // Безопасная инспекция git — без запроса.
+      "git status *": "allow",
+      "git diff *": "allow",
+      "git log *": "allow",
+      "git branch *": "allow",
+      "git remote *": "allow",
+      "git show *": "allow",
 
-    // Фиксация изменений (локально; удалённый репозиторий остаётся под deny).
-    { "action": "shell", "resource": "git add *", "effect": "allow" },
-    { "action": "shell", "resource": "git commit *", "effect": "allow" },
+      // Фиксация изменений (локально; удалённый репозиторий остаётся под deny).
+      "git add *": "allow",
+      "git commit *": "allow",
 
-    // Скрипты проекта из AGENTS.md — без запроса.
-    { "action": "shell", "resource": "npm run dev *", "effect": "allow" },
-    { "action": "shell", "resource": "npm test *", "effect": "allow" },
-    { "action": "shell", "resource": "npm run test *", "effect": "allow" },
-    { "action": "shell", "resource": "npm run lint *", "effect": "allow" },
-    { "action": "shell", "resource": "npm run format *", "effect": "allow" },
-    { "action": "shell", "resource": "npm run format:check *", "effect": "allow" },
-    { "action": "shell", "resource": "npm run spec *", "effect": "allow" },
-    { "action": "shell", "resource": "npm run spec:generate *", "effect": "allow" },
-    { "action": "shell", "resource": "npm run spec:check *", "effect": "allow" },
-    { "action": "shell", "resource": "npm run spec:client *", "effect": "allow" },
-    { "action": "shell", "resource": "npm run spec:client:check *", "effect": "allow" },
-    { "action": "shell", "resource": "npm run spec:server *", "effect": "allow" },
-    { "action": "shell", "resource": "npm run spec:server:check *", "effect": "allow" },
-    { "action": "shell", "resource": "npm run build *", "effect": "allow" },
-    { "action": "shell", "resource": "npm run start *", "effect": "allow" },
+      // Скрипты проекта из AGENTS.md — без запроса.
+      "npm run dev *": "allow",
+      "npm test *": "allow",
+      "npm run test *": "allow",
+      "npm run lint *": "allow",
+      "npm run format *": "allow",
+      "npm run format:check *": "allow",
+      "npm run spec *": "allow",
+      "npm run spec:generate *": "allow",
+      "npm run spec:check *": "allow",
+      "npm run spec:client *": "allow",
+      "npm run spec:client:check *": "allow",
+      "npm run spec:server *": "allow",
+      "npm run spec:server:check *": "allow",
+      "npm run build *": "allow",
+      "npm run start *": "allow",
 
-    // Установка зависимостей (из корня или -w в workspace).
-    { "action": "shell", "resource": "npm install *", "effect": "allow" },
-    { "action": "shell", "resource": "npm i *", "effect": "allow" },
+      // Установка зависимостей (из корня или -w в workspace).
+      "npm install *": "allow",
+      "npm i *": "allow",
 
-    // npx: форматирование, тесты, shadcn-компоненты.
-    { "action": "shell", "resource": "npx prettier *", "effect": "allow" },
-    { "action": "shell", "resource": "npx vitest *", "effect": "allow" },
-    { "action": "shell", "resource": "npx shadcn *", "effect": "allow" },
+      // npx: форматирование, тесты, shadcn-компоненты.
+      "npx prettier *": "allow",
+      "npx vitest *": "allow",
+      "npx shadcn *": "allow",
 
-    // GitHub CLI — issue tracker из AGENTS.md / docs/agents/issue-tracker.md.
-    { "action": "shell", "resource": "gh issue *", "effect": "allow" },
-    { "action": "shell", "resource": "gh pr *", "effect": "allow" },
-    { "action": "shell", "resource": "gh api *", "effect": "allow" },
+      // GitHub CLI — issue tracker из AGENTS.md / docs/agents/issue-tracker.md.
+      "gh issue *": "allow",
+      "gh pr *": "allow",
+      "gh api *": "allow",
 
-    // Опасные команды — жёсткий запрет (deny нельзя обойти «Allow always»).
-    { "action": "shell", "resource": "git push *", "effect": "deny" },
-    { "action": "shell", "resource": "git reset --hard *", "effect": "deny" },
-    { "action": "shell", "resource": "git clean *", "effect": "deny" },
-    { "action": "shell", "resource": "git branch -D *", "effect": "deny" },
-    { "action": "shell", "resource": "rm -rf *", "effect": "deny" },
-  ],
+      // Опасные команды — жёсткий запрет (deny нельзя обойти «Allow always»).
+      // Голый `git push` тоже запрещён отдельным шаблоном: его вызывает сам GitHub-экшен
+      // в `pushToLocalBranch`, и `"git push *"` его не покрывает. Отсюда следствие:
+      // сценарий «внеси правки» в CI доехал бы до push и упал на запрете — это ожидаемо,
+      // удалённый репозиторий из-под бота не пишется; «объясни / отревьюй» работает.
+      "git push": "deny",
+      "git push *": "deny",
+      "git reset --hard *": "deny",
+      "git clean *": "deny",
+      "git branch -D *": "deny",
+      "rm -rf *": "deny",
+
+      // gh разрешён целиком для чтения и работы с тикетами, но не для необратимых действий:
+      // merge/close по PR и issue — deny, иначе разрешающие `gh pr *` / `gh issue *`
+      // покрывали бы и их.
+      "gh pr merge *": "deny",
+      "gh pr close *": "deny",
+      "gh issue close *": "deny",
+    },
+  },
 
   // MCP-серверы проекта. Конфиг в репозитории, чтобы агентная настройка была
   // воспроизводима: клон + установка Node.js — и инструменты доступны.
