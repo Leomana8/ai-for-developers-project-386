@@ -1,0 +1,65 @@
+name: opencode-interactive
+
+# Обсуждение по комментариям в PR. Отличие от `opencode.yml` — своя команда и режим
+# разговора: там по `/oc` агент вносит правки и коммитит, здесь по `/ask` он отвечает
+# в треде и код не трогает. Команды `/oc` и `/opencode` намеренно не переиспользуются,
+# иначе на один комментарий сработали бы оба экшена.
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+jobs:
+  ask:
+    # Только комментарии в PR (у issue нет поля `pull_request`) и только с командой.
+    # Проверка дублирует `mentions` у экшена намеренно: `if` отсекает лишние комментарии
+    # ещё до подъёма раннера, а `mentions` вырезает команду из текста запроса.
+    if: |
+      ((github.event_name == 'issue_comment' && github.event.issue.pull_request) ||
+        github.event_name == 'pull_request_review_comment') &&
+      (contains(github.event.comment.body, ' /ask') ||
+        startsWith(github.event.comment.body, '/ask') ||
+        contains(github.event.comment.body, ' /interactive') ||
+        startsWith(github.event.comment.body, '/interactive'))
+    runs-on: ubuntu-latest
+    # Страховка от зависания — как в `opencode.yml`: экшен поднимает `opencode serve`
+    # без клиента, который снял бы запрос на подтверждение (ask).
+    timeout-minutes: 15
+    permissions:
+      id-token: write
+      # Права ниже — для GITHUB_TOKEN. Сам агент работает с токеном приложения OpenCode,
+      # полученным через OIDC-обмен, и его права задаются настройкой приложения.
+      contents: read
+      # Ответ в треде PR — запись.
+      pull-requests: write
+      # Комментарий в PR для GitHub — это комментарий в issue, ответ на него тоже запись.
+      issues: write
+    steps:
+      # Репо нужно агенту для чтения: ответ должен опираться на файлы, а не на память.
+      # `persist-credentials: false` — как в `opencode.yml`, лишний токен в git не нужен.
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Run opencode
+        uses: anomalyco/opencode/github@latest
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }} # имя секрета зависит от провайдера в model
+        with:
+          model: opencode/space-bunny-free
+          mentions: /ask,/interactive
+          prompt: |
+            Ответь на вопрос из комментария в PR.
+
+            Правила:
+            - Это разговор, а не задача: отвечаешь в треде, код не меняешь — ни правок,
+              ни коммитов, ни push.
+            - Язык ответа — язык вопроса.
+            - Перед ответом прочитай `AGENTS.md`, а по теме — сами файлы, и ссылайся
+              на них как `путь:строка`. Если вопрос про комментарий на конкретной строке,
+              в контексте уже есть файл, номера строк и диф.
+            - Если нужен выбор, а не факт, перечисли варианты со своей рекомендацией,
+              а не выбирай молча.
+            - Не выдумывай: непроверенное — так и помечай.
