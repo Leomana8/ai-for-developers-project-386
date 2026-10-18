@@ -102,6 +102,8 @@ it('POST /api/event-types with malformed JSON responds 422 with an error envelop
   expect(response.status).toBe(422)
   const payload = await response.json()
   expect(payload.error.code).toBe('validation_error')
+  // Канон §5: тело не разобрано — русский текст, а не 'Unexpected token'.
+  expect(payload.error.fields).toEqual({ body: 'Некорректный JSON' })
 })
 
 it('POST /api/event-types with a duration not a multiple of 15 responds 422 with fields', async () => {
@@ -475,6 +477,47 @@ describe('meetings', () => {
 
     for (const payload of [blankPayload, badEmailPayload]) {
       expect(Object.keys(payload.error.fields).some((key) => key.startsWith('/'))).toBe(false)
+    }
+  })
+
+  // Регрессия #51: поля конверта UI показывает пользователю как есть, поэтому
+  // технические сообщения ajv ('must match format "email"') переводим в
+  // русский канон §5 «Запись».
+  it('responds 422 with Russian canon field texts for schema-level validation', async () => {
+    const cases: [Record<string, unknown>, string, string][] = [
+      [{ guestName: '' }, 'guestName', 'Укажите имя'],
+      [{ guestName: 'и'.repeat(101) }, 'guestName', 'Имя не длиннее 100 символов'],
+      [{ guestEmail: 'фук@gse.tu' }, 'guestEmail', 'Похоже, в email ошибка'],
+      [
+        { guestEmail: 'a'.repeat(250) + '@example.com' },
+        'guestEmail',
+        'Email не длиннее 254 символов',
+      ],
+    ]
+
+    for (const [override, field, text] of cases) {
+      const response = await postMeeting(override)
+      expect(response.status).toBe(422)
+      const payload = await response.json()
+      expect(payload.error.fields[field]).toBe(text)
+    }
+  })
+
+  // Поле без своего текста в FIELD_TEXTS и правило, для которого текста нет,
+  // отдают общий fallback §5 «Запись» — техническое сообщение ajv в интерфейс
+  // попадать не должно ни при каких комбинациях.
+  it('responds 422 with the generic field text for unmapped fields and rules', async () => {
+    const cases: [Record<string, unknown>, string][] = [
+      [{ start: 42 }, 'start'],
+      [{ eventTypeId: null }, 'eventTypeId'],
+      [{ guestName: 'Иван', guestEmail: 42 }, 'guestEmail'],
+    ]
+
+    for (const [override, field] of cases) {
+      const response = await postMeeting(override)
+      expect(response.status).toBe(422)
+      const payload = await response.json()
+      expect(payload.error.fields[field]).toBe('Некорректное значение поля')
     }
   })
 })

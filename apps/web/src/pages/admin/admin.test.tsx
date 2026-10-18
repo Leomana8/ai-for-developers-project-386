@@ -183,9 +183,9 @@ describe('EventTypeFormPage', () => {
             error: {
               code: 'validation_error',
               message: 'Проверьте правильность заполнения полей',
-              // Тексты полей валидатора — технический fallback (§5), UI
-              // показывает их как есть.
-              fields: { name: 'too long' },
+              // Сервер переводит правила валидатора в русский канон §5
+              // (apps/server/src/openapi.ts), UI показывает тексты как есть.
+              fields: { name: 'Название не длиннее 100 символов' },
             },
           },
           { status: 422 },
@@ -197,7 +197,7 @@ describe('EventTypeFormPage', () => {
     fireEvent.input(screen.getByLabelText(/Длительность/), { target: { value: '60' } })
     fireEvent.click(screen.getByRole('button', { name: 'Создать тип события' }))
 
-    expect(await screen.findByText('too long')).toBeInTheDocument()
+    expect(await screen.findByText('Название не длиннее 100 символов')).toBeInTheDocument()
     expect((await screen.findByTestId('location')).textContent).toBe('/admin/event-types/new')
   })
 })
