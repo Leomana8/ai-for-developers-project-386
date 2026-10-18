@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.3.0](https://github.com/Leomana8/ai-for-developers-project-386/compare/v1.2.0...v1.3.0) (2026-10-18)
+
+
+### Features
+
+* **ci:** экшены opencode-review и opencode-interactive ([4d591f8](https://github.com/Leomana8/ai-for-developers-project-386/commit/4d591f8e5ff8fe6481b8f6535018d2d0cc4190bf))
+* **ci:** экшены opencode-review и opencode-interactive ([da0e47c](https://github.com/Leomana8/ai-for-developers-project-386/commit/da0e47c82dbe2432dd1ea470215e26072d289d2f)), closes [#54](https://github.com/Leomana8/ai-for-developers-project-386/issues/54)
+
+
+### Bug Fixes
+
+* **agent:** запретить агенту переписывать git-историю ([a140240](https://github.com/Leomana8/ai-for-developers-project-386/commit/a140240f278c556e0b9b69f700652897fbadd32e))
+* **agent:** правила доступа в V1-формате — GitHub-экшен ставит OpenCode V1 ([2becdcc](https://github.com/Leomana8/ai-for-developers-project-386/commit/2becdccef931af5f6b4b57f596ef8d2f11112f3e))
+* **agent:** правила доступа в V1-формате — GitHub-экшен ставит OpenCode V1 ([ceb8311](https://github.com/Leomana8/ai-for-developers-project-386/commit/ceb83117deb6a49871ffbb2ed600721cc9b6c255))
+* **ci:** восстановление push после перезаписи истории в экшене opencode ([d52d726](https://github.com/Leomana8/ai-for-developers-project-386/commit/d52d726935c123f9f367682b0ac2bcb84fc4320c)), closes [#53](https://github.com/Leomana8/ai-for-developers-project-386/issues/53)
+
 ## [1.2.0](https://github.com/Leomana8/ai-for-developers-project-386/compare/v1.1.1...v1.2.0) (2026-10-13)
 
 
