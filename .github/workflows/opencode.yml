@@ -20,7 +20,10 @@ jobs:
     timeout-minutes: 15
     permissions:
       id-token: write
-      contents: read
+      # write, а не read: шагу восстановления нужен push. Экшен и до этого
+      # получал write-токен через OIDC-обмен, так что расширение не меняет
+      # уровень доступа агента — просто делает его явным.
+      contents: write
       pull-requests: read
       issues: read
     steps:
@@ -30,8 +33,49 @@ jobs:
           persist-credentials: false
 
       - name: Run opencode
+        id: run_opencode
+        # Экшен завершает работу `git add .` + `git commit` + `git push` — просто
+        # `git push`, без `--force`. Если агент переписал историю (`git commit
+        # --amend`, rebase), push отклоняется как non-fast-forward, job падает, а
+        # все правки теряются: раннер эфемерный. Не гасим ошибку — разбираем её
+        # отдельным шагом ниже.
+        continue-on-error: true
         uses: anomalyco/opencode/github@latest
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }} # имя секрета зависит от провайдера в model
         with:
           model: opencode/space-bunny-free
+
+      # Страховка для переписанной истории: `--force-with-lease` отправляет
+      # локальный HEAD в ветку PR, только если remote всё ещё там, где его видел
+      # чекаут, — чужие коммиты, попавшие в ветку параллельно, не затираются.
+      # Если HEAD совпадает с remote, падение не связано с push — пересоздаём
+      # ошибку, чтобы прогон остался красным по-настоящему.
+      - name: Восстановить push после отклонённой перезаписи истории
+        if: steps.run_opencode.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
+        run: |
+          set -euo pipefail
+
+          if git remote get-url fork >/dev/null 2>&1; then
+            echo "Ветка форка — восстановление не применимо, падаем как раньше."
+            exit 1
+          fi
+
+          branch="$(gh pr view "$PR_NUMBER" --json headRefName --jq .headRefName)"
+          remote_sha="$(git rev-parse --verify --quiet "refs/remotes/origin/$branch" || true)"
+
+          if [ "$remote_sha" = "$(git rev-parse HEAD)" ]; then
+            echo "HEAD совпадает с origin/$branch — дело не в push."
+            exit 1
+          fi
+
+          echo "HEAD=$(git rev-parse HEAD) != origin/$branch=${remote_sha:-<нет>} — пробуем force-with-lease."
+          # Экшен на обратном пути возвращает свой extraheader; на всякий случай
+          # убираем возможный протухший заголовок, иначе git предпочтёт его
+          # помощнику учётных данных.
+          git config --local --unset-all http.https://github.com/.extraheader || true
+          gh auth setup-git
+          git push --force-with-lease origin "HEAD:refs/heads/$branch"
