@@ -29,6 +29,11 @@ export function openApiValidator() {
     apiSpec: openApiSpecPath,
     validateRequests: true,
     validateResponses: true,
+    // Форматы (в т.ч. @format("email") из §5 «Запись») проверяем в режиме
+    // `fast` — это осознанный выбор репозитория, а не дефолт библиотеки:
+    // клиентская подсказка email (apps/web/src/lib/validation.ts) — дословная
+    // копия этого набора, и любая смена режима разъедется с ней.
+    ajvFormats: { mode: 'fast' },
     // Незадокументированные пути пропускаем: их ловит catch-all в app.ts
     // и отвечает 404 с контрактным ErrorEnvelope.
     ignoreUndocumented: true,

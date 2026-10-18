@@ -102,6 +102,8 @@ it('POST /api/event-types with malformed JSON responds 422 with an error envelop
   expect(response.status).toBe(422)
   const payload = await response.json()
   expect(payload.error.code).toBe('validation_error')
+  // Канон §5: тело не разобрано — русский текст, а не 'Unexpected token'.
+  expect(payload.error.fields).toEqual({ body: 'Некорректный JSON' })
 })
 
 it('POST /api/event-types with a duration not a multiple of 15 responds 422 with fields', async () => {
@@ -498,6 +500,24 @@ describe('meetings', () => {
       expect(response.status).toBe(422)
       const payload = await response.json()
       expect(payload.error.fields[field]).toBe(text)
+    }
+  })
+
+  // Поле без своего текста в FIELD_TEXTS и правило, для которого текста нет,
+  // отдают общий fallback §5 «Запись» — техническое сообщение ajv в интерфейс
+  // попадать не должно ни при каких комбинациях.
+  it('responds 422 with the generic field text for unmapped fields and rules', async () => {
+    const cases: [Record<string, unknown>, string][] = [
+      [{ start: 42 }, 'start'],
+      [{ eventTypeId: null }, 'eventTypeId'],
+      [{ guestName: 'Иван', guestEmail: 42 }, 'guestEmail'],
+    ]
+
+    for (const [override, field] of cases) {
+      const response = await postMeeting(override)
+      expect(response.status).toBe(422)
+      const payload = await response.json()
+      expect(payload.error.fields[field]).toBe('Некорректное значение поля')
     }
   })
 })
