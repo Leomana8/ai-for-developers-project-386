@@ -49,6 +49,20 @@ MCP-серверы проекта — `playwright`, `chrome-devtools` (лока�
 `RENDER_API_TOKEN` через подстановку `{env:RENDER_API_TOKEN}`. Локальные артефакты в
 `.opencode/*` (кроме `opencode.jsonc`, `commands/`, `skills/`) игнорируются — см. `.gitignore`.
 
+### Владение git-историей
+
+Коммит и push делает GitHub-экшен (`git add .` + `git commit` + `git push` в
+`pushToLocalBranch`), а не агент: текст коммита экшен берёт из финального резюме
+агента. Поэтому агент только правит файлы, а в ответе отдаёт готовое сообщение
+коммита — первая строка Conventional Commits, последняя `Closes #NN`.
+
+Переписывать историю нельзя и бессмысленно: `--amend`, `rebase`, `reset`,
+`branch -f`, `update-ref`, `push --force` запрещены в `.opencode/opencode.jsonc`.
+Переписанный tip экшен не запушит — его `git push` без `--force` получит
+`non-fast-forward`, job упадёт, а правки потеряются: раннер эфемерный (прогон
+39067299559). Текст коммита, который хочется «поправить», задаётся резюме, а не
+amend'ом.
+
 ### Issue tracker
 
 Задачи ведутся в GitHub Issues этого репозитория (`gh` CLI). See `docs/agents/issue-tracker.md`.

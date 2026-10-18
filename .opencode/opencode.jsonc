@@ -94,7 +94,29 @@
       // удалённый репозиторий из-под бота не пишется; «объясни / отревьюй» работает.
       "git push": "deny",
       "git push *": "deny",
-      "git reset --hard *": "deny",
+
+      // Перезапись уже опубликованной истории. Экшен завершает работу `git add .` +
+      // `git commit` + `git push` (без --force), а текст коммита берёт из резюме агента,
+      // поэтому переписанный tip не запушится: push получит non-fast-forward, job упадёт,
+      // а правки агента потеряются — раннер эфемерный (прогон 39067299559). Правила идут
+      // после `"git commit *": "allow"`: внутри инструмента побеждает последнее совпадение.
+      // `--fixup`/`--squash` запрещены тем же списком: сами по себе они безопасны, но
+      // существуют только ради последующего `rebase --autosquash`.
+      "git commit --amend": "deny",
+      "git commit --amend *": "deny",
+      "git commit --fixup *": "deny",
+      "git commit --squash *": "deny",
+      "git rebase": "deny",
+      "git rebase *": "deny",
+      // Перекрывает прежний `git reset --hard *`: запрещено любое перемещение указателя
+      // ветки, включая `git reset <путь>` для расстегирования — стейжит сам экшен.
+      "git reset": "deny",
+      "git reset *": "deny",
+      "git branch -f *": "deny",
+      "git update-ref *": "deny",
+      "git filter-branch *": "deny",
+      "git filter-repo *": "deny",
+
       "git clean *": "deny",
       "git branch -D *": "deny",
       "rm -rf *": "deny",
