@@ -1,0 +1,79 @@
+name: opencode-review
+
+# Автоматическое ревью PR: агент читает диф и оставляет комментарии, кода не меняет.
+# Партнёр `opencode.yml`: там работа по запросу человека (`/oc`, `/opencode`) и агент
+# правит файлы. Здесь инициатива у бота, человек не пишет команду.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  review:
+    # Черновики не ревьюим. PR от ботов — тем более: их же коммитит `opencode.yml`,
+    # и ревью собственных коммитов только жжёт токены (и рискует зациклиться).
+    # Форки пропускаем: GitHub не передаёт секреты в прогонах от форков, job упал бы
+    # на пустом API-ключе. `pull_request_target` секреты даст, но вместе с ними под
+    # управление коду чужого PR попадёт write-токен — поэтому вариант не используем.
+    if: >-
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.user.type != 'Bot' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    # Страховка от зависания — как в `opencode.yml`: экшен поднимает `opencode serve`
+    # без клиента, который снял бы запрос на подтверждение (ask).
+    timeout-minutes: 15
+    permissions:
+      id-token: write
+      # Права ниже — для GITHUB_TOKEN. Сам агент работает с токеном приложения OpenCode,
+      # полученным через OIDC-обмен, и его права задаются настройкой приложения.
+      contents: read
+      # write, а не read: ревью-комментарии — это запись в PR.
+      pull-requests: write
+      # Сводный комментарий к PR уходит через API issues — тоже запись.
+      issues: write
+    steps:
+      # Репо нужен агенту только для чтения кода. `persist-credentials: false` убирает
+      # extraheader с токеном из конфига git, как и в `opencode.yml`: агент всё равно
+      # получает доступ через токен приложения, а лишний токен в `.git/config` не нужен.
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Review pull request
+        uses: anomalyco/opencode/github@latest
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }} # имя секрета зависит от провайдера в model
+        with:
+          model: opencode/space-bunny-free
+          # Свой промпт вместо встроенного дефолта: дефолт смотрит на код вообще, а
+          # правила проекта живут в AGENTS.md и в договорах OpenAPI — их надо назвать.
+          prompt: |
+            Проведи ревью этого pull request по правилам репозитория.
+
+            Что проверять:
+            - Только TypeScript, без нетипизированного JS; форматирование — Prettier
+              (ESLint/oxlint не настраивается), проверка — `npm run lint`.
+            - Контракт API: правка эндпоинтов означает правку `spec/*.tsp` и регенерацию
+              через `npm run spec:generate`. CI падает на расхождении спеки
+              (`spec:check`, `spec:client:check`, `spec:server:check`).
+            - Тесты: Vitest; новый эндпоинт сервера начинается с дымового теста
+              в стиле `apps/server/src/app.test.ts`.
+            - Фронтенд ходит в данные только типизированным клиентом
+              `apps/web/src/lib/api.ts`, относительными путями `/api/*`.
+            - Термины — как в `GLOSSARY.md`, решения — как в `docs/adr/`.
+            - Коммиты — Conventional Commits со ссылкой на тикет;
+              `.github/workflows/hexlet-check.yml` не трогаем.
+
+            Как отвечать:
+            - Конкретные замечания — по месту: строка + файл, что не так и почему.
+            - Сводка в конце: что блокирует мердж, что необязательно.
+            - Никаких правок кода и никаких коммитов: этот прогон только ревью.
+            - Без похвал и придирок к тому, что уже решает Prettier. Если PR в порядке —
+              одна строка.
+
+      # Запрет на правку кода держится на трёх опорах, и все три важны: `contents: read`
+      # в правах выше, запрет `git push` в `.opencode/opencode.jsonc` (упавший прогон вместо
+      # коммита) и запрет в промпте. Агента `plan` вместо дефолтного `build` тут не
+      # выбрано сознательно: конфиг репозитория мержит `edit: allow` поверх `plan`,
+      # и read-only от смены агента не получается — только лишнее отличие от `opencode.yml`.
