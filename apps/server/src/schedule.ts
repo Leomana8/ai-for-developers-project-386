@@ -6,7 +6,7 @@ type Meeting = components['schemas']['Meeting']
 type Slot = components['schemas']['Slot']
 
 // Константы сервера по спеке (docs/spec.md §5): Владелец их не задаёт.
-export const GRID_MINUTES = 15
+export const GRID_MINUTES = 30
 export const WORK_DAY_START_MINUTES = 9 * 60
 export const WORK_DAY_END_MINUTES = 18 * 60
 export const BOOKING_WINDOW_DAYS = 14
@@ -48,7 +48,7 @@ export function isOccupied(meetings: Meeting[], start: Date, end: Date): boolean
   return meetings.some((m) => new Date(m.start) < end && new Date(m.end) > start)
 }
 
-// Является ли момент отметкой единой сетки (шаг 15 минут).
+// Является ли момент отметкой единой сетки (шаг 30 минут).
 export function isGridMark(date: Date): boolean {
   return date.getSeconds() === 0 && date.getMinutes() % GRID_MINUTES === 0
 }
@@ -80,7 +80,7 @@ export function bookingStartError(
 }
 
 // Доступность по спеке §5: окно записи [сегодня … сегодня+13], единая сетка
-// 15 минут, рабочее окно дня 09:00–18:00. Слот занимает duration/15 ячеек и
+// 30 минут, рабочее окно дня 09:00–18:00. Слот длится durationMinutes минут и
 // не предлагается, если выходит за конец рабочего окна. Занятость общая для
 // всех Типов событий; прошедшие Слоты сегодняшнего дня не возвращаются вовсе,
 // поэтому available говорит только о занятости.
