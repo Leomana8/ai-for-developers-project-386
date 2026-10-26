@@ -216,7 +216,10 @@ components:
       properties:
         id:
           type: string
-          description: UUID, генерирует сервер; Владелец не вводит
+          minLength: 1
+          maxLength: 100
+          pattern: ^[a-z0-9]+(-[a-z0-9]+)*$
+          description: Идентификатор задаёт Владелец календаря; уникален среди Типов событий
         name:
           type: string
           minLength: 1
@@ -236,9 +239,16 @@ components:
     EventTypeCreate:
       type: object
       required:
+        - id
         - name
         - duration
       properties:
+        id:
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: ^[a-z0-9]+(-[a-z0-9]+)*$
+          description: Идентификатор задаёт Владелец календаря; уникален среди Типов событий
         name:
           type: string
           minLength: 1

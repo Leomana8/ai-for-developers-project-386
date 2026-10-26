@@ -28,20 +28,25 @@ function span(offsetDays: number, startMinutes: number, durationMinutes: number)
 // сид не накатывают — данные в тестах создаются через HTTP.
 export function seedStore(store: Store): void {
   const intro = store.eventTypes.add({
+    id: 'intro',
     name: 'Знакомство',
     description: 'Короткий бесплатный созвон: обсудим задачу и формат работы',
     duration: 15,
   })
   const consult = store.eventTypes.add({
+    id: 'consultation',
     name: 'Консультация',
     description: 'Разбор конкретного вопроса по коду или архитектуре',
     duration: 30,
   })
   const mentoring = store.eventTypes.add({
+    id: 'mentoring',
     name: 'Менторинг',
     description: 'Длинная встреча: ревью проекта и план развития',
     duration: 60,
   })
+
+  if (!intro || !consult || !mentoring) throw new Error('Duplicate demo event type id')
 
   const createdAt = formatIso(new Date())
   const guests: Array<Omit<Meeting, 'id'>> = [

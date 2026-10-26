@@ -101,7 +101,7 @@ export interface components {
             error: components["schemas"]["Error"];
         };
         EventType: {
-            /** @description UUID, генерирует сервер; Владелец не вводит */
+            /** @description Идентификатор задаёт Владелец календаря; уникален среди Типов событий */
             id: string;
             /** @description Название Типа события */
             name: string;
@@ -114,6 +114,8 @@ export interface components {
             duration: number;
         };
         EventTypeCreate: {
+            /** @description Идентификатор задаёт Владелец календаря; уникален среди Типов событий */
+            id: string;
             name: string;
             description?: string | null;
             /**
