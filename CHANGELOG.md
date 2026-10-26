@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.3.0](https://github.com/Leomana8/ai-for-developers-project-386/compare/v1.2.0...v1.3.0) (2026-10-26)
+
+
+### Features
+
+* **ci:** экшены opencode-review и opencode-interactive ([4d591f8](https://github.com/Leomana8/ai-for-developers-project-386/commit/4d591f8e5ff8fe6481b8f6535018d2d0cc4190bf))
+* **ci:** экшены opencode-review и opencode-interactive ([da0e47c](https://github.com/Leomana8/ai-for-developers-project-386/commit/da0e47c82dbe2432dd1ea470215e26072d289d2f)), closes [#54](https://github.com/Leomana8/ai-for-developers-project-386/issues/54)
+
+
+### Bug Fixes
+
+* **agent:** запретить агенту переписывать git-историю ([a140240](https://github.com/Leomana8/ai-for-developers-project-386/commit/a140240f278c556e0b9b69f700652897fbadd32e))
+* **agent:** правила доступа в V1-формате — GitHub-экшен ставит OpenCode V1 ([2becdcc](https://github.com/Leomana8/ai-for-developers-project-386/commit/2becdccef931af5f6b4b57f596ef8d2f11112f3e))
+* **agent:** правила доступа в V1-формате — GitHub-экшен ставит OpenCode V1 ([ceb8311](https://github.com/Leomana8/ai-for-developers-project-386/commit/ceb83117deb6a49871ffbb2ed600721cc9b6c255))
+* allow calendar owner to define event type id ([2cd2374](https://github.com/Leomana8/ai-for-developers-project-386/commit/2cd2374cbc5b32566d481fd27ee00923bed7644b)), closes [#59](https://github.com/Leomana8/ai-for-developers-project-386/issues/59)
+* **ci:** восстановление push после перезаписи истории в экшене opencode ([d52d726](https://github.com/Leomana8/ai-for-developers-project-386/commit/d52d726935c123f9f367682b0ac2bcb84fc4320c)), closes [#53](https://github.com/Leomana8/ai-for-developers-project-386/issues/53)
+* **web:** обновить E2E-запись под обязательный id Типа события ([ebf9a7a](https://github.com/Leomana8/ai-for-developers-project-386/commit/ebf9a7a807bd65094489b0494c5a0c4ec1b2b684)), closes [#60](https://github.com/Leomana8/ai-for-developers-project-386/issues/60)
+* Владелец календаря задаёт id Типа события ([7fe889e](https://github.com/Leomana8/ai-for-developers-project-386/commit/7fe889ebb3311fec7716528b56007d452e61dc09))
+* установить шаг слотов 30 минут и исправить dev-запуск ([03b6894](https://github.com/Leomana8/ai-for-developers-project-386/commit/03b689418bc964d7a192682e2601bb74c48d7f2e))
+* шаг начала слотов 30 минут и исправление dev-запуска ([b4a57b3](https://github.com/Leomana8/ai-for-developers-project-386/commit/b4a57b303bd12c19300a64c3e91268dbbb723056))
+
 ## [1.2.0](https://github.com/Leomana8/ai-for-developers-project-386/compare/v1.1.1...v1.2.0) (2026-10-13)
 
 
