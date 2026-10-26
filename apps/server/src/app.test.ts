@@ -62,19 +62,69 @@ it('POST /api/event-types returns 201 with the created event type', async () => 
   const response = await fetch(`${baseUrl}/api/event-types`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ name: 'Созвон', description: null, duration: 30 }),
+    body: JSON.stringify({ id: 'custom-call', name: 'Созвон', description: null, duration: 30 }),
   })
   expect(response.status).toBe(201)
   const created = await response.json()
   expect(created).toMatchObject({ name: 'Созвон', description: null, duration: 30 })
-  expect(typeof created.id).toBe('string')
+  expect(created.id).toBe('custom-call')
+})
+
+it.each([
+  undefined,
+  '',
+  'Bad-ID',
+  '-call',
+  'call-',
+  'call--intro',
+  'a/b',
+  'a b',
+  'a'.repeat(101),
+  123,
+])('POST rejects invalid event type id %j', async (id) => {
+  const response = await fetch(`${baseUrl}/api/event-types`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ id, name: 'Созвон', duration: 30 }),
+  })
+  expect(response.status).toBe(422)
+  const payload = await response.json()
+  expect(payload.error.code).toBe('validation_error')
+  expect(payload.error.fields.id).toEqual(expect.any(String))
+})
+
+it('duplicate id preserves the original event type and its slots', async () => {
+  const response = await fetch(`${baseUrl}/api/event-types`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ id: 'custom-call', name: 'Другое название', duration: 60 }),
+  })
+  expect(response.status).toBe(422)
+  expect((await response.json()).error.fields).toEqual({ id: 'Этот идентификатор уже занят' })
+  const list = await fetch(`${baseUrl}/api/event-types`)
+  expect(await list.json()).toEqual([
+    { id: 'custom-call', name: 'Созвон', description: null, duration: 30 },
+  ])
+  const slots = await fetch(`${baseUrl}/api/event-types/custom-call/slots`)
+  expect(slots.status).toBe(200)
+  expect((await slots.json()).eventTypeId).toBe('custom-call')
+})
+
+it.each(['a', 'a'.repeat(100)])('accepts event type id at length boundary: %s', async (id) => {
+  const response = await fetch(`${baseUrl}/api/event-types`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ id, name: 'Созвон', duration: 30 }),
+  })
+  expect(response.status).toBe(201)
+  expect((await response.json()).id).toBe(id)
 })
 
 it('POST /api/event-types with an invalid body responds 422 with an error envelope', async () => {
   const response = await fetch(`${baseUrl}/api/event-types`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ name: '', duration: 200 }),
+    body: JSON.stringify({ id: 'custom-call', name: '', duration: 200 }),
   })
   expect(response.status).toBe(422)
   const payload = await response.json()
@@ -110,7 +160,7 @@ it('POST /api/event-types with a duration not a multiple of 15 responds 422 with
   const response = await fetch(`${baseUrl}/api/event-types`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ name: 'Созвон', duration: 40 }),
+    body: JSON.stringify({ id: 'custom-call', name: 'Созвон', duration: 40 }),
   })
   expect(response.status).toBe(422)
   const payload = await response.json()
@@ -192,7 +242,7 @@ describe('createApp({ seed: true })', () => {
     const create = await fetch(`${seeded.baseUrl}/api/event-types`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ name: 'Созвон', duration: 45 }),
+      body: JSON.stringify({ id: 'custom-call', name: 'Созвон', duration: 45 }),
     })
     expect(create.status).toBe(201)
     const created = await create.json()
@@ -355,7 +405,7 @@ describe('meetings', () => {
     const create = await fetch(`${meetings.baseUrl}/api/event-types`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ name: 'Консультация', duration: 30 }),
+      body: JSON.stringify({ id: 'custom-call', name: 'Консультация', duration: 30 }),
     })
     const created = await create.json()
     eventTypeId = (created as components['schemas']['EventType']).id
@@ -584,7 +634,7 @@ describe('createApp() storage isolation', () => {
       const create = await fetch(`${first.baseUrl}/api/event-types`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ name: 'Созвон', duration: 30 }),
+        body: JSON.stringify({ id: 'custom-call', name: 'Созвон', duration: 30 }),
       })
       expect(create.status).toBe(201)
 
@@ -602,7 +652,7 @@ describe('createApp() storage isolation', () => {
       const create = await fetch(`${fresh.baseUrl}/api/event-types`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ name: 'Консультация', duration: 30 }),
+        body: JSON.stringify({ id: 'custom-call', name: 'Консультация', duration: 30 }),
       })
       expect(create.status).toBe(201)
       const created = await create.json()

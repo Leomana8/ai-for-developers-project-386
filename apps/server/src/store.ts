@@ -1,5 +1,3 @@
-import { randomUUID } from 'node:crypto'
-
 import type { components } from './api/schema.js'
 
 type EventType = components['schemas']['EventType']
@@ -7,13 +5,13 @@ type EventTypeCreate = components['schemas']['EventTypeCreate']
 type Meeting = components['schemas']['Meeting']
 
 // Хранилище за тонким интерфейсом: маршруты не знают, что данные лежат в Map,
-// и не видят генерацию id. Решение карты #8: in-memory, без персистентности;
+// не зависят от реализации хранения. Решение карты #8: in-memory, без персистентности;
 // Слоты не хранятся — вычисляются из сетки и занятости Встречами.
 export type Store = {
   eventTypes: {
     list(): EventType[]
     get(id: string): EventType | undefined
-    add(input: EventTypeCreate): EventType
+    add(input: EventTypeCreate): EventType | undefined
   }
   meetings: {
     list(): Meeting[]
@@ -31,8 +29,9 @@ export function createStore(): Store {
       list: () => [...eventTypes.values()],
       get: (id) => eventTypes.get(id),
       add: (input) => {
+        if (eventTypes.has(input.id)) return undefined
         const eventType: EventType = {
-          id: randomUUID(),
+          id: input.id,
           name: input.name,
           description: input.description ?? null,
           duration: input.duration,

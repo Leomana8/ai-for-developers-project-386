@@ -119,6 +119,7 @@ describe('EventTypeFormPage', () => {
       },
     })
     renderForm()
+    fireEvent.input(screen.getByLabelText('Идентификатор'), { target: { value: 'e2' } })
 
     fireEvent.input(screen.getByLabelText('Название'), { target: { value: 'Менторинг' } })
     fireEvent.input(screen.getByLabelText(/Длительность/), { target: { value: '60' } })
@@ -127,14 +128,54 @@ describe('EventTypeFormPage', () => {
     // Навигация на список Встреч после создания.
     expect(await screen.findByText('meetings')).toBeInTheDocument()
     // Тело запроса на границе /api (обработчик mockApi записывает его асинхронно).
-    expect(requestBody).toEqual({ name: 'Менторинг', description: null, duration: 60 })
+    expect(requestBody).toEqual({ id: 'e2', name: 'Менторинг', description: null, duration: 60 })
     expect(screen.getByTestId('location').textContent).toBe('/admin/meetings')
+  })
+
+  it.each(['', 'Bad-ID', 'call--intro', 'a/b', 'a'.repeat(101)])(
+    'не отправляет неверный идентификатор %j',
+    async (id) => {
+      const create = vi.fn()
+      mockApi({ 'POST /api/event-types': create })
+      renderForm()
+      fireEvent.input(screen.getByLabelText('Идентификатор'), { target: { value: id } })
+      fireEvent.input(screen.getByLabelText('Название'), { target: { value: 'Созвон' } })
+      fireEvent.input(screen.getByLabelText(/Длительность/), { target: { value: '30' } })
+      fireEvent.click(screen.getByRole('button', { name: 'Создать тип события' }))
+      expect(screen.getByLabelText('Идентификатор')).toHaveAttribute('aria-invalid', 'true')
+      expect(create).not.toHaveBeenCalled()
+    },
+  )
+
+  it('показывает ошибку занятого идентификатора и сохраняет ввод', async () => {
+    mockApi({
+      'POST /api/event-types': () =>
+        Response.json(
+          {
+            error: {
+              code: 'validation_error',
+              message: 'Проверьте правильность заполнения полей',
+              fields: { id: 'Этот идентификатор уже занят' },
+            },
+          },
+          { status: 422 },
+        ),
+    })
+    renderForm()
+    fireEvent.input(screen.getByLabelText('Идентификатор'), { target: { value: 'intro-call' } })
+    fireEvent.input(screen.getByLabelText('Название'), { target: { value: 'Созвон' } })
+    fireEvent.input(screen.getByLabelText(/Длительность/), { target: { value: '30' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Создать тип события' }))
+    expect(await screen.findByText('Этот идентификатор уже занят')).toBeInTheDocument()
+    expect(screen.getByLabelText('Идентификатор')).toHaveValue('intro-call')
+    expect(screen.getByTestId('location').textContent).toBe('/admin/event-types/new')
   })
 
   it('клиентская валидация: длительность не кратна 15 — не отправляет', async () => {
     const createEventType = vi.fn()
     mockApi({ 'POST /api/event-types': createEventType })
     renderForm()
+    fireEvent.input(screen.getByLabelText('Идентификатор'), { target: { value: 'e2' } })
 
     fireEvent.input(screen.getByLabelText('Название'), { target: { value: 'Менторинг' } })
     fireEvent.input(screen.getByLabelText(/Длительность/), { target: { value: '50' } })
@@ -150,6 +191,7 @@ describe('EventTypeFormPage', () => {
     const createEventType = vi.fn()
     mockApi({ 'POST /api/event-types': createEventType })
     renderForm()
+    fireEvent.input(screen.getByLabelText('Идентификатор'), { target: { value: 'e2' } })
 
     fireEvent.input(screen.getByLabelText(/Длительность/), { target: { value: '30' } })
     fireEvent.click(screen.getByRole('button', { name: 'Создать тип события' }))
@@ -165,6 +207,7 @@ describe('EventTypeFormPage', () => {
       },
     })
     renderForm()
+    fireEvent.input(screen.getByLabelText('Идентификатор'), { target: { value: 'e2' } })
 
     fireEvent.input(screen.getByLabelText('Название'), { target: { value: 'Менторинг' } })
     fireEvent.input(screen.getByLabelText(/Длительность/), { target: { value: '60' } })
@@ -192,6 +235,7 @@ describe('EventTypeFormPage', () => {
         ),
     })
     renderForm()
+    fireEvent.input(screen.getByLabelText('Идентификатор'), { target: { value: 'e2' } })
 
     fireEvent.input(screen.getByLabelText('Название'), { target: { value: 'Менторинг' } })
     fireEvent.input(screen.getByLabelText(/Длительность/), { target: { value: '60' } })

@@ -28,7 +28,10 @@ model ErrorEnvelope {
 // ===================== Тип события =====================
 
 model EventType {
-  @doc("UUID, генерирует сервер; Владелец не вводит")
+  @doc("Идентификатор задаёт Владелец календаря; уникален среди Типов событий")
+  @minLength(1)
+  @maxLength(100)
+  @pattern("^[a-z0-9]+(-[a-z0-9]+)*$")
   id: string;
 
   @doc("Название Типа события")
@@ -47,6 +50,12 @@ model EventType {
 }
 
 model EventTypeCreate {
+  @doc("Идентификатор задаёт Владелец календаря; уникален среди Типов событий")
+  @minLength(1)
+  @maxLength(100)
+  @pattern("^[a-z0-9]+(-[a-z0-9]+)*$")
+  id: string;
+
   @minLength(1)
   @maxLength(100)
   name: string;

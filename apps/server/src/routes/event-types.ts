@@ -36,7 +36,16 @@ export function eventTypesRouter(store: Store): Router {
       return
     }
 
-    res.status(201).json(store.eventTypes.add(req.body))
+    const created = store.eventTypes.add(req.body)
+    if (created === undefined) {
+      res.status(422).json(
+        errorEnvelope('validation_error', 'Проверьте правильность заполнения полей', {
+          id: 'Этот идентификатор уже занят',
+        }),
+      )
+      return
+    }
+    res.status(201).json(created)
   }
 
   router.get('/', list)

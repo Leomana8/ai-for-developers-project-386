@@ -12,6 +12,7 @@ import { ADMIN_UNAVAILABLE_MESSAGE, ApiError, apiErrorMessage, createEventType }
 export function EventTypeFormPage() {
   const navigate = useNavigate()
 
+  const [id, setId] = useState('')
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [duration, setDuration] = useState('')
@@ -23,6 +24,11 @@ export function EventTypeFormPage() {
   // duration — целое, кратно 15, от 15 до 90.
   function validate(): Record<string, string> {
     const errors: Record<string, string> = {}
+    if (id === '') errors.id = 'Укажите идентификатор'
+    else if (id.length > 100) errors.id = 'Идентификатор не длиннее 100 символов'
+    else if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(id)) {
+      errors.id = 'Используйте строчные латинские буквы, цифры и одиночные дефисы между ними'
+    }
     if (name.trim() === '') errors.name = 'Укажите название'
     if (name.trim().length > 100) errors.name = 'Название не длиннее 100 символов'
 
@@ -49,6 +55,7 @@ export function EventTypeFormPage() {
 
     try {
       await createEventType({
+        id,
         name: name.trim(),
         description: description.trim() === '' ? null : description.trim(),
         duration: Number(duration),
@@ -79,6 +86,24 @@ export function EventTypeFormPage() {
       </header>
 
       <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
+        <Field data-invalid={fieldErrors.id !== undefined}>
+          <FieldLabel htmlFor="event-type-id">Идентификатор</FieldLabel>
+          <Input
+            id="event-type-id"
+            name="id"
+            value={id}
+            onChange={(event) => setId(event.target.value)}
+            maxLength={100}
+            required
+            aria-describedby="event-type-id-hint"
+            aria-invalid={fieldErrors.id !== undefined}
+          />
+          <p id="event-type-id-hint" className="text-sm text-muted-foreground">
+            1–100 символов: строчные латинские буквы, цифры и одиночные дефисы между ними. Например,
+            consultation. Используется в ссылке на запись.
+          </p>
+          {fieldErrors.id !== undefined && <FieldError errors={[{ message: fieldErrors.id }]} />}
+        </Field>
         <Field data-invalid={fieldErrors.name !== undefined}>
           <FieldLabel htmlFor="event-type-name">Название</FieldLabel>
           <Input
