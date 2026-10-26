@@ -29,3 +29,5 @@ Thumbs.db
 .env.*.local
 
 .playwright-mcp/
+playwright-report/
+test-results/
