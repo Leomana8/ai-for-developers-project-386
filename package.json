@@ -14,7 +14,8 @@
     "build": "npm run build -w apps/server && npm run build -w apps/web",
     "start": "npm run start -w apps/server",
     "test": "npm run test -w apps/server && npm run test -w apps/web",
-    "lint": "npm run lint -w apps/server && npm run lint -w apps/web",
+    "test:e2e": "playwright test",
+    "lint": "npm run lint -w apps/server && npm run lint -w apps/web && oxlint playwright.config.ts e2e",
     "spec": "tsp compile spec",
     "spec:generate": "npm run spec && npm run spec:client && npm run spec:server",
     "spec:check": "npm run spec && git diff --exit-code -- spec/output",
@@ -26,6 +27,7 @@
     "format:check": "prettier --check ."
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@typespec/compiler": "^1.17.0",
     "@typespec/http": "^1.17.0",
     "@typespec/openapi3": "^1.17.0",

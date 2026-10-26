@@ -30,6 +30,22 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser booking test
+        run: npm run test:e2e
+
+      - name: Upload browser test diagnostics
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: booking-e2e-diagnostics
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
       - name: Check OpenAPI spec up to date
         run: npm run spec:check
 

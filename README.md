@@ -54,6 +54,24 @@ $env:PORT = '4001'
 npm run dev
 ```
 
+## Браузерный тест записи
+
+```bash
+npx playwright install chromium
+npm run build
+npm run test:e2e
+```
+
+Playwright проходит полный сценарий записи в Chromium с настоящим API и проверяет
+сохранённую Встречу. Команда сама запускает собранный сервер на порту 43001 и Vite
+на 43173; эти порты должны быть свободны. Сервер и браузер используют UTC.
+Каждый запуск создаёт новое хранилище в памяти с демо-данными.
+
+В CI после сборки устанавливается Chromium с системными зависимостями и запускается
+тот же тест. При падении доступны артефакты `booking-e2e-diagnostics`: HTML-отчёт,
+снимок экрана и trace. Локальный отчёт: `npx playwright show-report`, просмотр
+трассировки: `npx playwright show-trace test-results/<каталог-теста>/trace.zip`.
+
 ## API-контракт
 
 Контракт публичного API описан на [TypeSpec](https://typespec.io) в `spec/*.tsp`.
