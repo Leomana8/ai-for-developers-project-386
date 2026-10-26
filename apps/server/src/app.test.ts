@@ -217,7 +217,7 @@ describe('createApp({ seed: true })', () => {
     const introTomorrow = introSlots.days.find((day) => day.date === isoDate(1))!
     const introByStart = new Map(introTomorrow.slots.map((slot) => [slot.start, slot.available]))
     expect(introByStart.get(`${isoDate(1)}T09:00:00`)).toBe(false)
-    expect(introByStart.get(`${isoDate(1)}T09:15:00`)).toBe(true)
+    expect(introByStart.get(`${isoDate(1)}T09:30:00`)).toBe(true)
     expect(introByStart.get(`${isoDate(1)}T10:00:00`)).toBe(false)
     expect(introByStart.get(`${isoDate(1)}T10:30:00`)).toBe(true)
 
@@ -230,12 +230,12 @@ describe('createApp({ seed: true })', () => {
       mentoringTomorrow.slots.map((slot) => [slot.start, slot.available]),
     )
     expect(mentoringByStart.get(`${isoDate(1)}T09:00:00`)).toBe(false) // Знакомство
-    expect(mentoringByStart.get(`${isoDate(1)}T09:15:00`)).toBe(false) // Консультация 10:00
+    expect(mentoringByStart.get(`${isoDate(1)}T09:30:00`)).toBe(false) // Консультация 10:00
     expect(mentoringByStart.get(`${isoDate(1)}T10:00:00`)).toBe(false) // Консультация
     expect(mentoringByStart.get(`${isoDate(1)}T10:30:00`)).toBe(true)
   })
 
-  it('offers slots on a 15-minute grid that never leave the working window', async () => {
+  it('offers slots on a 30-minute grid that never leave the working window', async () => {
     const list = await fetch(`${seeded.baseUrl}/api/event-types`)
     const eventTypes = (await list.json()) as Array<{ id: string; duration: number }>
     const mentoring = eventTypes.find((t) => t.duration === 60)!
@@ -250,13 +250,13 @@ describe('createApp({ seed: true })', () => {
       // Сегодняшний день короче: прошедшие Слоты не возвращаются (§5), поэтому
       // полную сетку проверяем на остальных 13 днях.
       if (day.date === isoDate(0)) continue
-      // 60 минут в окне 09:00–18:00: старты 09:00…17:00 → 33 слота в день.
-      expect(day.slots).toHaveLength(33)
+      // 60 минут в окне 09:00–18:00: старты 09:00…17:00 → 17 слотов в день.
+      expect(day.slots).toHaveLength(17)
       expect(day.slots[0]?.start).toBe(`${day.date}T09:00:00`)
       expect(day.slots.at(-1)?.end).toBe(`${day.date}T18:00:00`)
       for (const slot of day.slots) {
         const minutes = Number(slot.start.slice(11, 13)) * 60 + Number(slot.start.slice(14, 16))
-        expect(minutes % 15).toBe(0)
+        expect(minutes % 30).toBe(0)
       }
     }
   })
@@ -327,7 +327,7 @@ describe('createApp({ seed: true })', () => {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         eventTypeId: consult.id,
-        start: `${isoDate(1)}T09:15:00`,
+        start: `${isoDate(1)}T09:30:00`,
         guestName: 'Гость',
         guestEmail: 'guest@example.com',
       }),
@@ -337,8 +337,8 @@ describe('createApp({ seed: true })', () => {
     expect(created).toMatchObject({
       eventTypeId: consult.id,
       eventTypeName: 'Консультация',
-      start: `${isoDate(1)}T09:15:00`,
-      end: `${isoDate(1)}T09:45:00`,
+      start: `${isoDate(1)}T09:30:00`,
+      end: `${isoDate(1)}T10:00:00`,
     })
 
     const upcoming = await fetch(`${seeded.baseUrl}/api/meetings`)
@@ -399,7 +399,7 @@ describe('meetings', () => {
   })
 
   it('responds 409 with slot_taken for an occupied or overlapping slot', async () => {
-    for (const start of [`${isoDate(1)}T09:00:00`, `${isoDate(1)}T09:15:00`]) {
+    for (const start of [`${isoDate(1)}T09:00:00`]) {
       const response = await postMeeting({ start })
       expect(response.status).toBe(409)
       const payload = await response.json()
@@ -422,8 +422,7 @@ describe('meetings', () => {
   it('responds 422 with out_of_window for past time, outside working hours or beyond the window', async () => {
     for (const start of [
       `${isoDate(-1)}T09:00:00`, // вчерашний день — окно записи уже закрыто
-      `${isoDate(1)}T08:45:00`, // до начала рабочего окна
-      `${isoDate(1)}T17:45:00`, // 30 минут не влезают до 18:00
+      `${isoDate(1)}T08:30:00`, // до начала рабочего окна
       `${isoDate(1)}T18:00:00`, // после конца рабочего окна
       `${isoDate(14)}T09:00:00`, // за пределами окна записи
     ]) {
@@ -439,7 +438,9 @@ describe('meetings', () => {
       'not-a-date',
       `${isoDate(1)} 09:00:00`, // не ISO 8601
       `${isoDate(1)}T09:00:00Z`, // в спеке время без часового пояса
-      `${isoDate(1)}T09:07:00`, // вне сетки 15 минут
+      `${isoDate(1)}T09:07:00`, // вне сетки 30 минут
+      `${isoDate(1)}T09:15:00`,
+      `${isoDate(1)}T09:45:00`,
     ]) {
       const response = await postMeeting({ start })
       expect(response.status).toBe(422)
@@ -612,8 +613,8 @@ describe('createApp() storage isolation', () => {
       expect(slots.days).toHaveLength(14)
 
       const tomorrow = slots.days.find((day) => day.date === isoDate(1))!
-      // 30 минут в окне 09:00–18:00: старты 09:00…17:30 → 35 слотов.
-      expect(tomorrow.slots).toHaveLength(35)
+      // 30 минут в окне 09:00–18:00: старты 09:00…17:30 → 18 слотов.
+      expect(tomorrow.slots).toHaveLength(18)
       expect(tomorrow.slots.every((slot) => slot.available)).toBe(true)
     } finally {
       await closeServer(fresh.server)

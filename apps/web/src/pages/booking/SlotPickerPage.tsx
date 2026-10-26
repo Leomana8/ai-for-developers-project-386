@@ -84,6 +84,7 @@ export function SlotPickerPage() {
             {eventType.name}, {eventType.duration} мин
           </p>
         )}
+        <p className="text-sm text-muted-foreground">Начало Слотов — каждые 30 минут</p>
       </header>
 
       {errorMessage !== null ? (

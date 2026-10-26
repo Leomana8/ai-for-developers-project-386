@@ -35,14 +35,34 @@ describe('availability', () => {
   it('не возвращает прошедшие и начинающиеся в «сейчас» Слоты сегодняшнего дня', () => {
     const today = day(availability('event-type-1', 15, [], NOW), 0)
 
-    // Сетка 15 минут в окне 09:00–18:00 даёт 36 Слотов в день; из них
-    // остаются только будущие: 12:15…17:45.
-    expect(today.slots).toHaveLength(23)
-    expect(today.slots[0]?.start).toBe('2026-10-13T12:15:00')
-    expect(today.slots.at(-1)?.end).toBe('2026-10-13T18:00:00')
+    // Сетка 30 минут в окне 09:00–18:00 даёт 18 Слотов в день; из них
+    // остаются только будущие: 12:30…17:30.
+    expect(today.slots).toHaveLength(11)
+    expect(today.slots[0]?.start).toBe('2026-10-13T12:30:00')
+    expect(today.slots.at(-1)?.end).toBe('2026-10-13T17:45:00')
     for (const slot of today.slots) {
       expect(new Date(slot.start).getTime()).toBeGreaterThan(NOW.getTime())
     }
+  })
+
+  it.each([15, 30, 45, 60, 90])(
+    'сохраняет длительность %i минут при шаге начала 30 минут',
+    (duration) => {
+      const tomorrow = day(availability('event-type-1', duration, [], NOW), 1)
+      expect(tomorrow.slots.length).toBe(Math.floor((540 - duration) / 30) + 1)
+      for (const [index, slot] of tomorrow.slots.entries()) {
+        const start = new Date(slot.start)
+        expect(start.getHours() * 60 + start.getMinutes()).toBe(540 + index * 30)
+        expect(new Date(slot.end).getTime() - start.getTime()).toBe(duration * 60_000)
+      }
+    },
+  )
+
+  it('учитывает пересечение длинного Слота с Встречей между отметками сетки', () => {
+    const today = day(availability('event-type-1', 60, [MEETING], NOW), 0)
+    const byStart = new Map(today.slots.map((slot) => [slot.start, slot.available]))
+    expect(byStart.get('2026-10-13T13:30:00')).toBe(false)
+    expect(byStart.get('2026-10-13T14:30:00')).toBe(true)
   })
 
   it('будущие дни окна не тронуты', () => {
@@ -50,18 +70,18 @@ describe('availability', () => {
 
     expect(result.window).toEqual({ from: '2026-10-13', to: '2026-10-26' })
     expect(result.days).toHaveLength(14)
-    // Старты 09:00…17:45 → 36 Слотов в день.
-    expect(day(result, 1).slots).toHaveLength(36)
+    // Старты 09:00…17:30 → 18 Слотов в день.
+    expect(day(result, 1).slots).toHaveLength(18)
     expect(day(result, 1).slots[0]?.start).toBe('2026-10-14T09:00:00')
-    expect(day(result, 1).slots.at(-1)?.end).toBe('2026-10-14T18:00:00')
+    expect(day(result, 1).slots.at(-1)?.end).toBe('2026-10-14T17:45:00')
   })
 
   it('available говорит только о занятости: занятый будущий Слот недоступен', () => {
     const today = day(availability('event-type-1', 15, [MEETING], NOW), 0)
     const byStart = new Map(today.slots.map((slot) => [slot.start, slot.available]))
 
-    expect(byStart.get('2026-10-13T13:45:00')).toBe(true)
+    expect(byStart.get('2026-10-13T13:30:00')).toBe(true)
     expect(byStart.get('2026-10-13T14:00:00')).toBe(false) // Встреча 14:00–14:15
-    expect(byStart.get('2026-10-13T14:15:00')).toBe(true)
+    expect(byStart.get('2026-10-13T14:30:00')).toBe(true)
   })
 })

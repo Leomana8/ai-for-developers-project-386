@@ -57,8 +57,8 @@ describe('SlotPickerPage', () => {
       {
         date: today,
         slots: [
-          { start: `${today}T09:00:00`, end: `${today}T09:15:00`, available: false },
-          { start: `${today}T09:15:00`, end: `${today}T09:30:00`, available: true },
+          { start: `${today}T09:00:00`, end: `${today}T09:30:00`, available: false },
+          { start: `${today}T09:30:00`, end: `${today}T10:00:00`, available: true },
         ],
       },
     ])
@@ -66,7 +66,9 @@ describe('SlotPickerPage', () => {
 
     const busy = await screen.findByRole('button', { name: '09:00' })
     expect(busy).toBeDisabled()
-    expect(screen.getByRole('button', { name: '09:15' })).toBeEnabled()
+    expect(screen.getByText('Начало Слотов — каждые 30 минут')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '09:15' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '09:30' })).toBeEnabled()
   })
 
   it('на дне видно число свободных Слотов', async () => {
@@ -75,9 +77,9 @@ describe('SlotPickerPage', () => {
       {
         date: today,
         slots: [
-          { start: `${today}T09:00:00`, end: `${today}T09:15:00`, available: false },
-          { start: `${today}T09:15:00`, end: `${today}T09:30:00`, available: true },
-          { start: `${today}T09:30:00`, end: `${today}T09:45:00`, available: true },
+          { start: `${today}T09:00:00`, end: `${today}T09:30:00`, available: false },
+          { start: `${today}T09:30:00`, end: `${today}T10:00:00`, available: true },
+          { start: `${today}T10:00:00`, end: `${today}T10:30:00`, available: true },
         ],
       },
     ])
@@ -93,7 +95,7 @@ describe('SlotPickerPage', () => {
     mockSlots([
       {
         date: today,
-        slots: [{ start: `${today}T09:00:00`, end: `${today}T09:15:00`, available: false }],
+        slots: [{ start: `${today}T09:00:00`, end: `${today}T09:30:00`, available: false }],
       },
     ])
     renderPicker()
@@ -107,7 +109,7 @@ describe('SlotPickerPage', () => {
     mockSlots([
       {
         date: today,
-        slots: [{ start: `${today}T09:00:00`, end: `${today}T09:15:00`, available: false }],
+        slots: [{ start: `${today}T09:00:00`, end: `${today}T09:30:00`, available: false }],
       },
     ])
     renderPicker()
@@ -121,13 +123,13 @@ describe('SlotPickerPage', () => {
     mockSlots([
       {
         date: today,
-        slots: [{ start: `${today}T09:00:00`, end: `${today}T09:15:00`, available: true }],
+        slots: [{ start: `${today}T09:00:00`, end: `${today}T09:30:00`, available: true }],
       },
       {
         date: tomorrow,
         slots: [
-          { start: `${tomorrow}T10:00:00`, end: `${tomorrow}T10:15:00`, available: true },
-          { start: `${tomorrow}T10:15:00`, end: `${tomorrow}T10:30:00`, available: true },
+          { start: `${tomorrow}T10:00:00`, end: `${tomorrow}T10:30:00`, available: true },
+          { start: `${tomorrow}T10:30:00`, end: `${tomorrow}T11:00:00`, available: true },
         ],
       },
     ])
@@ -141,7 +143,7 @@ describe('SlotPickerPage', () => {
     fireEvent.click(screen.getByRole('button', { name: formatDayLabel(tomorrow) }))
     expect(await screen.findByRole('button', { name: '10:00' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Продолжить' })).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '10:15' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: '10:30' })).toBeEnabled()
   })
 
   it('ошибка API → понятное сообщение', async () => {
@@ -162,7 +164,7 @@ describe('SlotPickerPage', () => {
     mockSlots([
       {
         date: today,
-        slots: [{ start: `${today}T09:00:00`, end: `${today}T09:15:00`, available: true }],
+        slots: [{ start: `${today}T09:00:00`, end: `${today}T09:30:00`, available: true }],
       },
     ])
     renderPicker()
@@ -175,7 +177,7 @@ describe('SlotPickerPage', () => {
     mockSlots([
       {
         date: tomorrow,
-        slots: [{ start: `${tomorrow}T10:00:00`, end: `${tomorrow}T10:15:00`, available: true }],
+        slots: [{ start: `${tomorrow}T10:00:00`, end: `${tomorrow}T10:30:00`, available: true }],
       },
     ])
     renderPicker(`/book/e1?date=${tomorrow}`)
