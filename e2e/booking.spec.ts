@@ -5,15 +5,22 @@ import { expect, test } from '@playwright/test'
 import type { components } from '../apps/web/src/api/schema'
 
 type EventType = components['schemas']['EventType']
+type EventTypeCreate = components['schemas']['EventTypeCreate']
 type Meeting = components['schemas']['Meeting']
 type Availability = components['schemas']['Availability']
 
 test('гость записывается на звонок через настоящий API', async ({ page, request }) => {
   const name = `E2E ${randomUUID()}`
+  const eventTypeInput: EventTypeCreate = {
+    id: `e2e-${randomUUID()}`,
+    name,
+    description: 'Браузерная проверка записи',
+    duration: 30,
+  }
   const created = await request.post('/api/event-types', {
-    data: { name, description: 'Браузерная проверка записи', duration: 30 },
+    data: eventTypeInput,
   })
-  expect(created.status()).toBe(201)
+  expect(created.status(), await created.text()).toBe(201)
   const eventType: EventType = await created.json()
 
   const availabilityResponse = await request.get(`/api/event-types/${eventType.id}/slots`)
